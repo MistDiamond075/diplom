@@ -1,0 +1,62 @@
+<!DOCTYPE html><html xmlns:th="https://www.thymeleaf.org" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Главная</title>
+    <link rel="stylesheet nofollow" href="/css/allstyle.css">
+    <link rel="stylesheet nofollow" href="/usercss">
+    <link rel="stylesheet nofollow" href="/css/calendarstyle.css">
+    <script src="/js/main.js"></script>
+    <script src="/js/calendarfn.js"></script>
+</head>
+<body>
+<div class="upside-bar">
+    <div class="overlay">
+        <span class="overlaybutton">
+            <a href="/">Главная</a>
+        </span>
+        <span class="overlaybutton">
+            <a href="/tasks" >Задания</a>
+        </span>
+        <span class="overlaybutton">
+            <a href="/conferences">Звонки</a>
+        </span>
+        <span class="overlaybutton">
+            <a href="/journal">Журнал</a>
+        </span>
+        <span class="overlaybutton">
+            <a href="/chats">Чаты</a>
+        </span>
+        <span class="overlaybutton allsettings-button-show" style="justify-content: center;width: fit-content;padding-left: 4px;padding-right: 4px;position: relative">
+            <a href="">🛠</a>
+               <div class="allsettings" style="display: none">
+                    <span class="allsettings-button" onclick="fillSettingsContainer(allSettingsType.SETCSS)">Задать CSS</span>
+                </div>
+        </span>
+    </div>
+</div>
+<div class="info-messages" id="msginfo">
+    <span class="info-messages-text">test</span>
+</div>
+    <div class="exit-profile-buttons-zone">
+        <button type="button" class="allbuttons admin-button" th:if="${role}=='ROLE_ADMIN'" onclick="document.location.href='/admin/menu'" style="width: 11vh">Админ-меню</button>
+        <button type="button" class="allbuttons profile-button" onclick="document.location.href='/profile'">Профиль</button>
+        <button type="button" class="allbuttons exit-button" onclick="logout()">Выйти</button>
+    </div>
+<aside id="calendar_zone" class="calendar-zone">
+    ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ
+</aside>
+    <div class="main-logo">
+        <img src="files/logo.png" style="width: 50%;height: 50%;align-self: center" >
+    </div>
+    <div class="main-redirect-buttons-zone">
+        <p><button type="button" class="allbuttons redirect-buttons" onclick="document.location.href='/tasks'">Задания</button></p>
+        <p><button type="button" class="allbuttons redirect-buttons" onclick="document.location.href='/conferences'">Звонки</button></p>
+        <p><button type="button" class="allbuttons redirect-buttons" onclick="document.location.href='/journal'">Журнал</button></p>
+        <p><button type="button" class="allbuttons redirect-buttons" onclick="document.location.href='/chats'">Чаты</button></p>
+    </div>
+<div class="setting-container" style="display: none"></div>
+</body>
+</html>

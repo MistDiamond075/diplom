@@ -1,0 +1,39 @@
+<!DOCTYPE html><html xmlns:th="https://www.thymeleaf.org" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Регистрация</title>
+    <link rel="stylesheet nofollow" href="/css/allstyle.css">
+    <link rel="stylesheet nofollow" href="/css/loginstyle.css">
+    <script src="/js/loginfn.js"></script>
+</head>
+<body>
+    <button type="button" class="allbuttons back-button" onclick="goToLoginPage()">Назад</button>
+    <h2>РЕГИСТРАЦИЯ</h2>
+    <form id="reg_form" class="reg-form">
+        <p>
+            <input type="text" id="reg_form_group" class="form-input form-reg-input" placeholder="Группа..." autocomplete="off" list="reg_form_group_list"  required>
+            <datalist id="reg_form_group_list">
+                <option th:each="group : ${groups}" th:value="${group.name}"></option>
+            </datalist>
+        </p>
+        <p><input type="text" id="reg_form_lname" class="form-input form-reg-input" placeholder="Фамилия..." autocomplete="off"  required></p>
+        <p><input type="text" id="reg_form_fname" class="form-input form-reg-input" placeholder="Имя..." autocomplete="off"  required></p>
+        <p><input type="text" id="reg_form_sname" class="form-input form-reg-input" placeholder="Отчество..." autocomplete="off"></p>
+        <p><input type="date" id="reg_form_birthday" class="form-input form-reg-input" placeholder="Дата рождения..." autocomplete="off"></p>
+        <p><input type="text" id="reg_form_login" class="form-input form-reg-input" placeholder="Логин..." autocomplete="off"  required></p>
+        <p><input type="text" id="reg_form_password" class="form-input form-reg-input" placeholder="Пароль..." autocomplete="off"  required></p>
+        <p><input type="text" id="reg_form_mail" class="form-input form-reg-input" placeholder="Email..." autocomplete="off"  required></p>
+        <p style="width: 100%;"><select id="qwestion_selector" style="width: 100%">
+            <option value="PETNAME">Имя первого домашнего животного</option>
+            <option value="MOMLNAME">Девичья фамилия матери</option>
+            <option value="RESERVEPW">Резервный пароль</option>
+        </select></p>
+        <p><input type="text" id="reg_form_qwestion_answ" class="form-input form-reg-input" placeholder="Ответ на проверочный вопрос..." autocomplete="off"  required>
+        <p><input type="text" id="reg_form_stud_bilet" class="form-input form-reg-input" placeholder="Номер студенческого билета..." autocomplete="off"  required>
+       <p><button type="button" class="allbuttons" onclick="Registration()">Регистрация</button></p>
+    </form>
+</body>
+</html>

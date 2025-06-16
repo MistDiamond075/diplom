@@ -1,0 +1,299 @@
+.videocall-zone{
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    justify-content: center;
+}
+.video-zone{
+    width: 60%;
+    height: inherit;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-start;
+}
+.video-display{
+    width:100%;
+    height: 75%;
+    background: linear-gradient(to top, #4d4d4d, #657d56);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+}
+.own-video{
+    height: 68%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: row;
+}
+.own-video video{
+    height: 100%;
+    max-width: 100%;
+    backdrop-filter: blur(5px);
+    border: 2px solid black;
+    border-radius: 5px;
+}
+.remote-videos-zone{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-evenly;
+    height: 31%;
+    width: 100%;
+    overflow-x: clip;
+    overflow-y: hidden;
+}
+.remote-videos-zone video{
+    height: 100%;
+    width: 300px;
+
+}
+.remote-video-image{
+    width: 7vh;
+    height: 7vh;
+    border-radius: 10px;
+}
+.remote-streams-zone{
+   /* width: 100%;*/
+    height: 98%;
+    width: 300px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    margin-left: 2px;
+    background: linear-gradient(to bottom, #161616, #373737);
+    backdrop-filter: blur(1px);
+    border: 2px solid black;
+    border-radius: 5px;
+}
+.remote-streams-zone button{
+    background: #68996c;
+}
+.chat-and-userlist-zone{
+    width:20%;
+    height: inherit;
+    margin-left: 5px;
+}
+.user-list-zone{
+    background: #2e2e2e;
+    height: 37%;
+    overflow-y: auto;
+    margin-bottom: 1%;
+    border: 2px groove black;
+}
+.chat-zone{
+    display: flex;
+    flex-direction: column;
+    align-items: end;
+    background: #2e2e2e;
+    height: 37%;
+    /*box-sizing: border-box;
+    box-shadow: inset 0 0 0 1px #3b6731;*/
+    border: 2px groove black;
+}
+.chat-block{
+    height: 90%;
+    width: 100%;
+    overflow-y: auto;
+    overflow-x: auto;
+}
+.message-block{
+    display: flex;
+    height: 10%;
+    width: 100%;
+    flex-direction: row;
+    justify-content: space-between;
+}
+.message-block button{
+    width: 15%;
+    height: 100%;
+    box-sizing: unset;
+    border: 1px solid;
+    padding-block: 0;
+}
+.message-field{
+    height: 100%;
+    width: 80%;
+    padding-block: 0;
+    padding-inline: 0;
+    padding: 0 0 0 2px;
+    margin: 0;
+    border: 1px solid #3b6731;
+    background: #161616;
+    color: #ffff00;
+}
+.user-participant{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 1px;
+    border: 1px solid #304926;
+}
+.user-participant-desc{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    width: 95%;
+}
+.user-participant-avatar{
+    width: 50px;
+    height: 50px;
+    border: 1px solid black;
+    margin-right: 5px;
+}
+.user-participant-avatar-and-name{
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+}
+.user-participant-settings{
+    display: flex;
+    width: fit-content;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: flex-end;
+    align-self: stretch;
+}
+.chat-message{
+    font-size:0.9em;
+    margin: 3px;
+}
+.chat-message-time{
+    font-size: 0.8em;
+}
+.chat-message-text{
+    display: inline;
+    font-family: "Courier New";
+}
+.control-panel{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: space-around;
+    background: #333333;
+    padding: 4px;
+    width:60%;
+    border: 2px groove black;
+}
+.control-button{
+    width: 40px;
+    height: 40px;
+    box-sizing: content-box;
+    box-shadow: none;
+    border: 2px solid black;
+    padding-inline: 0;
+    padding-block: 0;
+    background: #71716f;
+    cursor: pointer;
+}
+.control-button:hover{
+    border: 2px solid #518706;
+}
+.videocall-setting-header{
+    background: transparent;
+    color: white;
+}
+.videocall-setting-zone{
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+}
+.user-participant-icons{
+    display: flex;
+    flex-direction: row;
+    align-self: center;
+}
+.user-participant-icon{
+    width: 17px;
+    height: 17px;
+}
+.participants-dropdown {
+    background: #000000;
+    border: 1px solid #ccc;
+    max-height: 150px;
+    overflow-y: auto;
+    position: absolute;
+    z-index: 1000;
+    font-size: 14px;
+}
+.participants-item {
+    border: 1px solid white;
+    padding: 4px;
+    cursor: pointer;
+}
+.participants-item:hover {
+    color: #ffea00;
+    font-weight: bold;
+}
+.publish-dialog-window{
+    position : fixed;
+    top : 50%;
+    left :50%;
+    transform : translate(-50%, -50%);
+    background :#252525;
+    border : 1px solid #ccc;
+    padding : 20px;
+    z-index : 9999;
+    box-shadow : 0 0 10px rgba(0,0,0,0.5);
+    border-radius : 8px;
+}
+.microstate-on{
+    background-image: url("/files/icons/videocall/mic_on.png");
+}
+.microstate-off{
+    background-image: url("/files/icons/videocall/mic_off.png");
+}
+.microstate-muted{
+    background-image: url("/files/icons/videocall/mic_muted.png");
+    cursor: not-allowed;
+    pointer-events: none;
+}
+.camstate-on{
+    background-image: url("/files/icons/videocall/cam_on.png");
+}
+.camstate-off{
+    background-image: url("/files/icons/videocall/cam_off.png");
+}
+.camstate-muted{
+    background-image: url("/files/icons/videocall/cam_muted.png");
+    cursor: not-allowed;
+    pointer-events: none;
+}
+.soundstate-on{
+    background-image: url("/files/icons/videocall/snd_on.png");
+}
+.soundstate-off{
+    background-image: url("/files/icons/videocall/snd_off.png");
+}
+.soundstate-muted{
+    background-image: url("/files/icons/videocall/snd_muted.png");
+    cursor: not-allowed;
+    pointer-events: none;
+}
+.demostate-on{
+    background-image: url("/files/icons/videocall/demo_on.png");
+}
+.demostate-off{
+    background-image: url("/files/icons/videocall/demo_off.png");
+}
+.demostate-muted{
+    background-image: url("/files/icons/videocall/demo_muted.png");
+    cursor: not-allowed;
+    pointer-events: none;
+}

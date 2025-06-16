@@ -1,0 +1,9 @@
+join
+leave
+mic off/on self
+cam off/on self
+demo off/on
+mic off/on other
+cam off/on other
+react
+send msg to chat

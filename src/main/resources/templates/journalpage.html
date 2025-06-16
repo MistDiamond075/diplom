@@ -1,0 +1,165 @@
+<!DOCTYPE html><html xmlns:th="https://www.thymeleaf.org" lang="ru"><head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Журнал</title>
+    <link rel="stylesheet nofollow" href="/css/allstyle.css">
+    <link rel="stylesheet nofollow" href="/usercss">
+    <link rel="stylesheet nofollow" href="/css/journalstyle.css">
+    <script src="/js/main.js"></script>
+    <script src="/js/journalfn.js"></script>
+</head>
+<body>
+<div class="upside-bar">
+    <div class="overlay">
+        <span class="overlaybutton">
+            <a href="/">Главная</a>
+        </span>
+        <span class="overlaybutton">
+            <a href="/tasks" >Задания</a>
+        </span>
+        <span class="overlaybutton" >
+            <a href="/conferences">Звонки</a>
+        </span>
+        <span class="overlaybutton" style="cursor: pointer">
+            <a href="/journal">Журнал</a>
+        </span>
+        <span class="overlaybutton">
+            <a href="/chats">Чаты</a>
+        </span>
+        <span class="overlaybutton allsettings-button-show" style="justify-content: center;width: fit-content;padding-left: 4px;padding-right: 4px;position: relative">
+            <a href="">🛠</a>
+               <div class="allsettings" style="display: none">
+                    <span class="allsettings-button" onclick="fillSettingsContainer(allSettingsType.SETCSS)">Задать CSS</span>
+                </div>
+        </span>
+    </div>
+</div>
+<div class="info-messages" id="msginfo">
+    <span class="info-messages-text">test</span>
+</div>
+    <button type="button" class="allbuttons back-button" onclick="document.location.href='/'">Назад</button>
+    <span class="page-header">
+        ЖУРНАЛ
+    </span>
+
+
+<div class="journal-zone-all">
+    <div style="width: 85%" class="journal-zone">
+        <div id="journal_filter_zone" class="journal-filter-zone">
+            <button type="button" class="allbuttons" onclick="showFilters()">Фильтры</button>
+            <div class="filter-zone" id="filter_zone" style="display: none">
+                <div>
+                    <label for="filter_datepicker_start">Дата начала</label>
+                    <br>
+                    <input type="date" id="filter_datepicker_start" class="journal-datepicker form-input" placeholder="Дата начала...">
+                </div>
+                <div>
+                    <label for="filter_datepicker_end">Дата конца</label>
+                    <br>
+                    <input type="date" id="filter_datepicker_end" class="journal-datepicker form-input" placeholder="Дата конца...">
+                </div>
+                <div>
+                    <label for="filter_subject">Предмет</label>
+                    <br>
+                    <input type="text" id="filter_subject" class="journal-datepicker form-input" list="filter_subject_list">
+                    <datalist id="filter_subject_list">
+                        <option th:each="subject: ${subject_list}" th:value="${subject.name}"></option>
+                    </datalist>
+                </div>
+                <div th:if="${userrole}=='ROLE_TEACHER' or ${userrole}=='ROLE_ADMIN'">
+                    <label for="filter_student">Студент</label>
+                    <br>
+                    <input type="text" id="filter_student" class="journal-datepicker form-input" list="filter_student_list">
+                    <datalist id="filter_student_list">
+                        <option th:each="student: ${student_list}" th:value="${student.lastname}+' '+${student.firstname}+' '+${student.surname}"></option>
+                    </datalist>
+                </div>
+                <div th:if="${userrole}=='ROLE_TEACHER' or ${userrole}=='ROLE_ADMIN'">
+                    <label for="filter_group">Группа</label>
+                    <br>
+                    <input type="text" id="filter_group" class="journal-datepicker form-input" list="filter_group_list">
+                    <datalist id="filter_group_list">
+                        <option th:each="group: ${group_list}" th:value="${group.name}"></option>
+                    </datalist>
+                </div>
+            </div>
+        </div>
+        <div class="table-action-plug" style="display: none;" id="table_action_plug">
+
+        </div>
+        <div class="journal-table">
+
+    <table id="journal_table">
+        <tr>
+            <th class="table_td_entries" style="display: none;"></th>
+            <th class="journal-table-header" th:if="${userrole}=='ROLE_TEACHER' or ${userrole}=='ROLE_ADMIN'">Группа</th>
+            <th class="journal-table-header" th:if="${userrole}=='ROLE_TEACHER' or ${userrole}=='ROLE_ADMIN'">Студент</th>
+            <th class="journal-table-header">Предмет</th>
+            <th class="journal-table-header">Задание</th>
+            <th class="journal-table-header">Дата</th>
+            <th class="journal-table-header">Оценка</th>
+            <th class="journal-table-header">Посещение</th>
+        </tr>
+        <tr th:if="${journal_list!=null and !journal_list.isEmpty()}" th:each="journal : ${journal_list}" th:id="'journal_entry_'+${journal.journal.id}">
+            <td class="table_td_entries" style="display: none;"><input type="radio" name="deleteupdate" th:attr="onclick='addJournalTableDataToForm('+${journal.journal.id}+')'"></td>
+            <td th:if="${userrole}=='ROLE_TEACHER' or ${userrole}=='ROLE_ADMIN'"  data-column="group">
+                <div th:each="group : ${journal.groups.split(',')}">
+                    <span th:text="${group}"></span><br/>
+                </div>
+            </td>
+            <td th:if="${userrole}=='ROLE_TEACHER' or ${userrole}=='ROLE_ADMIN'" th:text="${(journal.journal.journaluserId.lastname+' '+journal.journal.journaluserId.firstname+' '+journal.journal.journaluserId.surname)}" data-column="student"></td>
+            <td th:text="${journal.journal.journalsubjectId.name}" data-column="subject"></td>
+            <td th:class="${journal.journal.journaltasksCompletedId!=null ? 'task-link' :''}" th:utext="${journal.journal.journaltasksCompletedId}!=null ? '<a href=\'/task/'+${journal.journal.journaltasksCompletedId.tasksId.id}+'?studentId='+${journal.journal.journaltasksCompletedId.userId.id}+'\'>'+${journal.journal.journaltasksCompletedId.tasksId.name}+'</a>':'=='" data-column="task"></td>
+            <td th:text="${journal.journal.date}" data-column="date"></td>
+            <td th:text="${journal.journal.grade}!=null ? ${journal.journal.grade}:'=='" data-column="grade"></td>
+            <td th:text="${journal.journal.waspresent}!=null ? (${journal.journal.waspresent} ? '+':'-'):'=='" data-column="waspresent"></td>
+        </tr>
+    </table>
+        </div>
+        </div>
+    <form id="form_journal"  class="form-journal" th:if="${userrole}=='ROLE_TEACHER' or ${userrole}=='ROLE_ADMIN'">
+        <input type="date" id="form_journal_date" class="journal-datepicker form-input" required>
+        <br id="form_journal_group_br" style="display: none">
+        <input type="text" id="form_journal_group" class="form-input" list="form_journal_group_list" placeholder="Группа..." style="display: none" required>
+        <datalist id="form_journal_group_list">
+            <option th:each="group: ${group_list}" th:id="'journal_form_group_'+${group.id}" th:value="${group.name}"></option>
+        </datalist>
+        <br id="form_journal_student_br" style="display: unset">
+        <input type="text" id="form_journal_student" class="form-input" list="form_journal_user_list" placeholder="Студент..." style="display: unset" required>
+        <datalist id="form_journal_user_list">
+            <option th:each="student: ${student_list}" th:id="'journal_form_student_'+${student.id}" th:value="${student.lastname}+' '+${student.firstname}+' '+${student.surname}"></option>
+        </datalist>
+        <br>
+        <input type="text" id="form_journal_subject" class="form-input" list="form_journal_subject_list" placeholder="Предмет..." required>
+        <datalist id="form_journal_subject_list">
+            <option th:each="subject: ${subject_list}" th:id="'journal_form_subject_'+${subject.id}" th:value="${subject.name}"></option>
+        </datalist>
+        <br>
+        <input type="number" min="-1" id="form_journal_grade" class="form-input" placeholder="Оценка...">
+        <p>
+            <input type="radio" name="waspresent" id="form_journal_waspresent_true">
+            <label for="form_journal_waspresent_true">Присутствовал</label>
+            <br>
+            <input type="radio" name="waspresent" id="form_journal_waspresent_false">
+            <label for="form_journal_waspresent_false">Отсутствовал</label>
+        </p>
+        <div>
+            <input type="checkbox" id="form_journal_apply_to_all">
+            <label for="form_journal_apply_to_all" id="lable_apply_all">Применить ко всем</label>
+        </div>
+        <div style="margin-top: 5px;width: 100%">
+            <button type="button" id="form_journal_update" class="allbuttons form-journal-btn" onclick="getUpdateOrDeleteJournal(false)" style="display: block">Изменить запись</button>
+        </div>
+        <div style="margin-top: 5px;width: 100%">
+            <button type="button" id="form_journal_delete" class="allbuttons form-journal-btn" onclick="getUpdateOrDeleteJournal(true)" style="display: block">Удалить запись</button>
+        </div>
+        <div style="margin-top: 5px;width: 100%">
+        <button type="button" class="allbuttons form-journal-btn" onclick="sendJournalToSv()">Сохранить</button>
+        </div>
+    </form>
+</div>
+<span th:if="${journal_list==null or journal_list.isEmpty}" style="align-self: center">Ничего нет</span>
+<div class="setting-container" style="display: none"></div>
+</body>
+</html>

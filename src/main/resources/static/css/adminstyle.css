@@ -1,0 +1,320 @@
+body{
+    display:flex;
+    flex-direction:column;
+}
+.docbody{
+    display:flex;
+    justify-content: space-between;
+    width: 100%;
+}
+.menus{
+    width: 49%;
+    margin-left: 1%;
+}
+.menu{
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: flex-start;
+}
+.info-zone{
+    width: 49%;
+    overflow-y: auto;
+    height: 800px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-start;
+}
+.user-container{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    background: #4d4d4d;
+    height: 160px;
+    width: fit-content;
+    padding: 3px;
+    border: 3px solid black;
+    border-radius: 5px;
+    position: relative;
+}
+.user-container-block{
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+    height: 80%;
+}
+.user-container-block img{
+    width:120px;
+    height: 120px;
+}
+.user-desc{
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    height: 90%;
+    margin-left: 10px;
+}
+.user-desc label{
+    font-size: 0.8em;
+    font-weight: bold;
+    word-spacing: -5px;
+}
+.user-desc span, .user-desc input{
+    background: #000000;
+    display: block;
+    border: 2px #6d6d6d solid;
+    padding: 2px;
+    width: 100px;
+    overflow-x: clip;
+    overflow-y: hidden;
+    font-size: 0.9em;
+    color:white;
+}
+.user-desc input[type="date"]{
+    padding-block: 1px;
+}
+.ban-container{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    background: #4d4d4d;
+    height: 160px;
+    width: fit-content;
+    padding: 3px;
+    border: 3px solid black;
+    border-radius: 5px;
+    position: relative;
+}
+.ban-desc{
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    height: 90%;
+    margin-left: 10px;
+}
+.ban-desc label{
+    font-size: 0.8em;
+    font-weight: bold;
+    word-spacing: -5px;
+}
+.ban-desc span, .ban-desc input,.ban-desc textarea{
+    background: #000000;
+    display: block;
+    border: 2px #6d6d6d solid;
+    padding: 2px;
+    width: 100px;
+    overflow-x: clip;
+    overflow-y: hidden;
+    font-size: 0.9em;
+    color:white;
+}
+.file-container{
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    background: #4d4d4d;
+    height: 160px;
+    width: fit-content;
+    padding: 3px;
+    border: 3px solid black;
+    border-radius: 5px;
+    position: relative;
+}
+.file-container-block{
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: center;
+    width: 100%;
+    height: 80%;
+}
+.file-container img{
+    width:120px;
+    height: 120px;
+}
+.file-desc{
+    display: flex;
+    flex-wrap: nowrap;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    height: 90%;
+    margin-left: 10px;
+}
+.file-desc label{
+    font-size: 0.8em;
+    font-weight: bold;
+    word-spacing: -5px;
+}
+.file-desc span, .file-desc input,.file-desc textarea{
+    background: #000000;
+    display: block;
+    border: 2px #6d6d6d solid;
+    padding: 2px;
+    width: 300px;
+    overflow-x: clip;
+    overflow-y: hidden;
+    font-size: 0.9em;
+    color:white;
+    white-space: nowrap;
+}
+.group-container{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    background: #4d4d4d;
+    height: 160px;
+    width: fit-content;
+    padding: 3px;
+    border: 3px solid black;
+    border-radius: 5px;
+    position: relative;
+}
+.group-desc{
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    height: 90%;
+    margin-left: 10px;
+}
+.group-desc label{
+    font-size: 0.8em;
+    font-weight: bold;
+    word-spacing: -5px;
+}
+.group-desc span, .group-desc input,.group-desc textarea{
+    background: #000000;
+    display: block;
+    border: 2px #6d6d6d solid;
+    padding: 2px;
+    width: 100px;
+    overflow-x: clip;
+    overflow-y: hidden;
+    font-size: 0.9em;
+    color:white;
+}
+.role-container{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    background: #4d4d4d;
+    height: 160px;
+    width: fit-content;
+    padding: 3px;
+    border: 3px solid black;
+    border-radius: 5px;
+    position: relative;
+}
+.role-desc{
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    height: 90%;
+    margin-left: 10px;
+}
+.role-desc label{
+    font-size: 0.8em;
+    font-weight: bold;
+    word-spacing: -5px;
+}
+.role-desc span, .role-desc input,.role-desc textarea{
+    background: #000000;
+    display: block;
+    border: 2px #6d6d6d solid;
+    padding: 2px;
+    width: 100px;
+    overflow-x: clip;
+    overflow-y: hidden;
+    font-size: 0.9em;
+    color:white;
+}
+.subject-container{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    background: #4d4d4d;
+    height: 160px;
+    width: fit-content;
+    padding: 3px;
+    border: 3px solid black;
+    border-radius: 5px;
+    position: relative;
+}
+.subject-desc{
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: stretch;
+    height: 90%;
+    margin-left: 10px;
+}
+.subject-desc label{
+    font-size: 0.8em;
+    font-weight: bold;
+    word-spacing: -5px;
+}
+.subject-desc span, .subject-desc input,.subject-desc textarea{
+    background: #000000;
+    display: block;
+    border: 2px #6d6d6d solid;
+    padding: 2px;
+    width: 100px;
+    overflow-x: clip;
+    overflow-y: hidden;
+    font-size: 0.9em;
+    color:white;
+}
+.ban-desc input[type='datetime-local']{
+    font-size: 0.8em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+input[type="date"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-calendar-picker-indicator {
+    display: none;
+    -webkit-appearance: none;
+}
+.admin-form{
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    background: #383839;
+    border: 2px solid black;
+    top: 90px;
+    padding: 10px;
+}
+.admin-form-input-container{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+.admin-form-close-button{
+    position: absolute;
+    top: 1px;
+    right: 2px;
+    cursor: pointer;
+}

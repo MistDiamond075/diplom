@@ -1,0 +1,58 @@
+a{
+    color: #01cbf8;
+}
+a:hover{
+    color: #006fff;
+}
+.auth-buttons{
+    width: 100%;
+    height: 3vh;
+}
+.auth-form{
+    display: flex;
+    flex-direction: column;
+    margin-top: 25px;
+    align-items: center;
+    justify-content: center;
+    width: min-content;
+}
+.auth-form-checkbox{
+    width: 100%;
+    overflow: visible;
+    position: relative;
+    margin-bottom: 10px;
+    margin-top: 10px;
+}
+.auth-form-checkbox label{
+    word-spacing: -5px;
+    position: absolute;
+    width: max-content;
+    height: 100%;
+    line-height: 125%;
+    font-family: "Courier New";
+}
+.pwrestore-form{
+    text-align: center;
+}
+.reg-form{
+    width: min-content;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-content: space-between;
+    justify-content: flex-start;
+    align-items: center;
+}
+.reg-form p{
+    width: inherit;
+    height: auto;
+    margin-block-end: 0;
+}
+.form-reg-input{
+    height: 1.8em;
+    width: 30vh;
+}
+.form-pwrestore-plug{
+    font-style: italic;
+    color:#00ffde;
+}

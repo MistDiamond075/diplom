@@ -1,0 +1,84 @@
+<!DOCTYPE html><html xmlns:th="https://www.thymeleaf.org" lang="ru"><head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Создание видеоконференции</title>
+    <link rel="stylesheet nofollow" href="/css/allstyle.css">
+    <link rel="stylesheet nofollow" href="/usercss">
+    <link rel="stylesheet nofollow" href="/css/conferencesstyle.css">
+    <script src="/js/main.js"></script>
+    <script src="/js/conferencesfn.js"></script>
+</head>
+<body>
+<div class="upside-bar">
+    <div class="overlay">
+        <span class="overlaybutton">
+            <a href="/">Главная</a>
+        </span>
+        <span class="overlaybutton">
+            <a href="/tasks" >Задания</a>
+        </span>
+        <span class="overlaybutton" >
+            <a href="/conferences">Звонки</a>
+        </span>
+        <span class="overlaybutton" style="cursor: pointer">
+            <a href="/journal">Журнал</a>
+        </span>
+        <span class="overlaybutton">
+            <a href="/chats">Чаты</a>
+        </span>
+        <span class="overlaybutton allsettings-button-show" style="justify-content: center;width: fit-content;padding-left: 4px;padding-right: 4px;position: relative">
+            <a href="">🛠</a>
+               <div class="allsettings" style="display: none">
+                    <span class="allsettings-button" onclick="fillSettingsContainer(allSettingsType.SETCSS)">Задать CSS</span>
+                </div>
+        </span>
+    </div>
+</div>
+<div class="info-messages" id="msginfo">
+    <span class="info-messages-text">test</span>
+</div>
+<button type="button" class="allbuttons back-button" onclick="document.location.href='/conferences'">Назад</button>
+<span class="page-header" th:text="${conference!=null ? 'ИЗМЕНЕНИЕ КОНФЕРЕНЦИИ':'СОЗДАНИЕ КОНФЕРЕНЦИИ'}"></span>
+<div class="conference-zone">
+    <div class="conference-name-field_ conference-input-field">
+        <label for="conference_name">Название видеоконференции</label><br>
+        <input type="text" id="conference_name" th:value="${conference!=null ? conference.name:''}" required>
+    </div>
+    <div class="conference-date-field conference-input-field">
+        <label for="conference_date">Дата проведения</label><br>
+        <input type="datetime-local" id="conference_date" th:value="${conference!=null ? conference.datestart:''}">
+    </div>
+    <div class="conference-period-field conference-input-field">
+        <label for="conference_period">Повторить через (в днях)</label><br>
+        <input type="number" min="1" max="365" id="conference_period" th:value="${conference!=null ? conference.repeatable:''}" style="width: fit-content">
+    </div>
+    <div class="conference-subject-field conference-input-field">
+        <label for="subject_selector">Предмет</label>
+        <br>
+        <input id="subject_selector" type="text" list="subject_selector_list" th:value="${conference!=null ? conference.subjectId.name:''}">
+        <datalist id="subject_selector_list">
+            <option th:each="subject: ${subjects}" th:value="${subject.name}"></option>
+        </datalist>
+    </div>
+    <div class="conference-group-field conference-input-field" style="width: 100%">
+        <div style="width: 60%">
+            <label for="group_selector">Группа</label>
+            <br>
+            <input id="group_selector" type="text" list="group_selector_list" style="width:100%">
+            <datalist id="group_selector_list">
+                <option th:each="group: ${groups}" th:value="${group.name}"></option>
+            </datalist>
+        </div>
+        <div id="group_list" class="group-list">
+            <span th:if="${conference!=null}">
+                <span th:each="group: ${conference.groupId}" th:text="${group.name}+' '" th:id="'group_'+${group.id}" class="group-from-list" th:attr="onclick='deleteFromGroupList(\'group_'+${group.id}+'\')'"></span>
+            </span>
+        </div>
+    </div>
+    <button type="button" class="allbuttons" style="width: 20vh;align-self: center;margin-top: 10px" th:text="${conference!=null ? 'Сохранить':'Создать'}" onclick="sendConferenceToSv(null)">Создать</button>
+</div>
+<div class="setting-container" style="display: none"></div>
+</body>
+</html>

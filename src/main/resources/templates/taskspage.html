@@ -1,0 +1,109 @@
+<!DOCTYPE html><html xmlns:th="https://www.thymeleaf.org" lang="ru"><head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Задания</title>
+    <link rel="stylesheet nofollow" href="/css/allstyle.css">
+    <link rel="stylesheet nofollow" href="/usercss">
+    <link rel="stylesheet nofollow" href="/css/tasksstyle.css">
+    <script src="/js/main.js"></script>
+    <script src="/js/tasksfn.js"></script>
+    <script src="/js/sortfn.js"></script>
+</head>
+<body>
+<div class="upside-bar">
+    <div class="overlay">
+        <span class="overlaybutton">
+            <a href="/">Главная</a>
+        </span>
+        <span class="overlaybutton">
+            <a href="/tasks" >Задания</a>
+        </span>
+        <span class="overlaybutton" >
+            <a href="/conferences">Звонки</a>
+        </span>
+        <span class="overlaybutton" style="cursor: pointer">
+            <a href="/journal">Журнал</a>
+        </span>
+        <span class="overlaybutton">
+            <a href="/chats">Чаты</a>
+        </span>
+        <span class="overlaybutton allsettings-button-show" style="justify-content: center;width: fit-content;padding-left: 4px;padding-right: 4px;position: relative">
+            <a href="">🛠</a>
+               <div class="allsettings" style="display: none">
+                    <span class="allsettings-button" onclick="fillSettingsContainer(allSettingsType.SETCSS)">Задать CSS</span>
+                </div>
+        </span>
+    </div>
+</div>
+<div class="info-messages" id="msginfo">
+    <span class="info-messages-text">test</span>
+</div>
+<button type="button" class="allbuttons back-button" onclick="document.location.href='/'">Назад</button>
+<span class="page-header">
+        ЗАДАНИЯ
+    </span>
+<div id="tasks_filters" class="tasks-filters">
+    <button type="button" class="allbuttons" onclick="showFilters()" style="margin-right: 5px">Фильтры</button>
+    <div id="filter_zone" class="filter-zone" style="display: none">
+        <div>
+            <label for="filter_datepicker_start">Дата начала</label>
+            <br>
+            <input type="date" id="filter_datepicker_start" class="filter-element form-input" placeholder="Дата начала...">
+        </div>
+        <div>
+            <label for="filter_datepicker_end">Дата конца</label>
+            <br>
+            <input type="date" id="filter_datepicker_end" class="filter-element form-input" placeholder="Дата конца...">
+        </div>
+        <div>
+            <label for="filter_subject">Предмет</label>
+            <br>
+            <input type="text" id="filter_subject" class="filter-element form-input" list="filter_subject_list" placeholder="Предмет..." autocomplete="off">
+            <datalist id="filter_subject_list">
+                <option th:each="subject: ${subject_list}" th:value="${subject.name}"></option>
+            </datalist>
+        </div>
+        <div>
+            <label for="filter_name">Название</label>
+            <br>
+            <input type="text" id="filter_name" class="filter-element form-input" placeholder="Название...">
+        </div>
+        <div th:if="${userrole!='STUDENT'}">
+            <label for="filter_group">Группа</label>
+            <br>
+            <input type="text" id="filter_group" class="filter-element form-input" list="filter_group_list" placeholder="Группа..." autocomplete="off">
+            <datalist id="filter_group_list">
+                <option th:each="group: ${group_list}" th:value="${group.name}"></option>
+            </datalist>
+        </div>
+    </div>
+</div>
+    <div class="tasks-zone" th:if="${taskList}!=null">
+        <div th:id="'task_'+${task.id}" class="task" th:each="task,iterator: ${taskList}" th:attr="onclick='redirectToTask('+${task.id}+')'">
+            <div>
+                <span class="task-name" th:text="${task.name}"></span>
+                <br>
+                <span class="task-date" th:text="${#temporals.format(task.dateend, 'yyyy-MM-dd HH:mm')}"></span>
+                <br>
+                <span class="task-subject" th:text="${task.tasksubjectId.name}"></span>
+                <div th:each="group: ${task.groups}">
+                    <input type="hidden" class="task-groups" th:value="${group.name}" readonly>
+                </div>
+            </div>
+            <div style="text-align: end;" th:if="${userrole}!='STUDENT'">
+                <span th:id="'button_settings_'+${iterator.index}" class="task-settings-btn" th:attr="onclick='showTaskSettings('+${iterator.index}+')'">⚙️</span>
+                <div th:id="'task_settings_'+${iterator.index}" class="task-settings-block" style="display: none">
+                    <button type="button" class="task-setting-element" th:attr="onclick='redirectToTaskUpdatePage('+${task.id}+')'">Изменить</button>
+                    <button type="button" class="task-setting-element" th:attr="onclick='deleteTaskFromSv('+${task.id}+',\''+${task.name}+'\')'">Удалить</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="tasks-controls" th:if="${userrole}!='STUDENT'">
+        <button type="button" class="allbuttons" onclick="window.location.href+='/create'">Создать</button>
+    </div>
+<div class="setting-container" style="display: none"></div>
+</body>
+</html>

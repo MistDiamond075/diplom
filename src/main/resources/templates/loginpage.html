@@ -1,0 +1,31 @@
+<!DOCTYPE html><html xmlns:th="https://www.thymeleaf.org" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Вход|Авторизация</title>
+    <script src="/js/loginfn.js"></script>
+    <link rel="stylesheet nofollow" href="/css/allstyle.css">
+    <link rel="stylesheet nofollow" href="/css/loginstyle.css">
+</head>
+<body>
+
+    <div class="main-logo">
+        <img src="files/logo.png" style="width: 40%;height: 40%;align-self: center" >
+    </div>
+    <form th:action="@{/loginpage}" method="post">
+        <div class="auth-form">
+            <input type="text" id="username" class="form-input" name="username" placeholder="Логин..." autocomplete="off" style="margin-bottom: 0.5em" required>
+            <input type="password" id="password" class="form-input" name="password" placeholder="Пароль..." autocomplete="off"  required>
+            <div class="auth-form-checkbox">
+                <input type="checkbox" id="remember" name="remember-me">
+                <label for="remember">Сохранить вход</label>
+            </div>
+            <button type="submit" class="allbuttons auth-buttons">Вход</button>
+            <p style="width: 100%"><button type="button" class="allbuttons auth-buttons" onclick="goToRegPage()">Регистрация</button></p>
+        </div>
+    </form>
+    <a href="/pwrestorepage">Восстановление пароля</a>
+</body>
+</html>

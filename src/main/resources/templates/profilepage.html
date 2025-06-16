@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org" lang="ru"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Профиль</title>
+    <link rel="stylesheet nofollow" href="/css/allstyle.css">
+    <link rel="stylesheet nofollow" href="/usercss">
+    <link rel="stylesheet nofollow" href="/css/profilestyle.css">
+    <script src="/js/main.js"></script>
+    <script src="/js/profilelfn.js"></script>
+</head>
+<body>
+<div class="upside-bar">
+    <div class="overlay">
+        <span class="overlaybutton">
+            <a href="/">Главная</a>
+        </span>
+        <span class="overlaybutton">
+            <a href="/tasks" >Задания</a>
+        </span>
+        <span class="overlaybutton" >
+            <a href="/conferences">Звонки</a>
+        </span>
+        <span class="overlaybutton" style="cursor: pointer">
+            <a href="/journal">Журнал</a>
+        </span>
+        <span class="overlaybutton">
+            <a href="/chats">Чаты</a>
+        </span>
+        <span class="overlaybutton allsettings-button-show" style="justify-content: center;width: fit-content;padding-left: 4px;padding-right: 4px;position: relative">
+            <a href="">🛠</a>
+               <div class="allsettings" style="display: none">
+                    <span class="allsettings-button" onclick="fillSettingsContainer(allSettingsType.SETCSS)">Задать CSS</span>
+                </div>
+        </span>
+    </div>
+</div>
+<div class="info-messages" id="msginfo">
+    <span class="info-messages-text">test</span>
+</div>
+<button type="button" class="allbuttons back-button" onclick="document.location.href='/'">Назад</button>
+<span class="page-header">
+        ПРОФИЛЬ
+    </span>
+    <div class="profile-zone" th:if="${user}!=null">
+        <div class="profile-image">
+            <div id="form_image" class="avatar-upload-zone">
+                <input type="file" id="attached_file" class="form-input form-profile-input" name="formfile" accept="image/*" style="display: none;">
+                <div id="attached_file_overlay" class="avatar-upload-overlay" style="display: none">
+                    <span>Загрузить аватар</span>
+                </div>
+                <img th:src="@{/useravatar/{userid}(userid=${user.id})}" id="user_avatar">
+            </div>
+        </div>
+        <div class="profile-fields">
+        <p>
+            <label for="user_login">Логин</label>
+            <br>
+            <input type="text" th:value="${user.login}"id="user_login"  class="form-input form-profile-input" style="pointer-events: none" autocomplete="off" required></p>
+            <p>
+                <label for="user_password">Пароль</label>
+                <br>
+                <input type="password" th:value="${user.password}" class="form-input form-profile-input" id="user_password"  style="pointer-events: none" autocomplete="off" required>
+            </p>
+            <p>
+                <label for="user_role">Роли</label>
+                <br>
+                <input type="text" th:value="${userroles}" class="form-input form-profile-input" id="user_role"  autocomplete="off" readonly>
+            </p>
+        <p>
+            <label for="user_group">Группа</label>
+            <br>
+            <input type="text" th:value="${groupNames!=null ? groupNames : ''}" id="user_group" class="form-input form-profile-input" style="pointer-events: none" autocomplete="off" list="user_group_list" required>
+            <datalist id="user_group_list">
+                <option th:each="group : ${groups}" th:value="${group.name}"></option>
+            </datalist>
+        </p>
+        <p>
+            <label for="user_studentcard">Студенческий билет</label>
+            <br>
+            <input type="text" th:value="${user.studentcard}" class="form-input form-profile-input" id="user_studentcard"  style="pointer-events: none" autocomplete="off" required>
+        </p>
+        <p>
+            <label for="user_fname">Имя</label>
+            <br>
+            <input type="text" th:value="${user.firstname}" class="form-input form-profile-input" id="user_fname"  style="pointer-events: none" autocomplete="off" required>
+        </p>
+        <p>
+            <label for="user_lname">Фамилия</label>
+            <br>
+            <input type="text" th:value="${user.lastname}" class="form-input form-profile-input" id="user_lname"  style="pointer-events: none" autocomplete="off" required>
+        </p>
+        <p>
+            <label for="user_sname">Отчество</label>
+            <br>
+            <input type="text" th:value="${user.surname}" class="form-input form-profile-input" id="user_sname"  style="pointer-events: none" autocomplete="off" required>
+        </p>
+        <p>
+            <label for="user_birthdate">Дата рождения</label>
+            <br>
+            <input type="date" th:value="${user.dateofbirth}" class="form-input form-profile-input" id="user_birthdate"  style="pointer-events: none" autocomplete="off" required>
+        </p>
+        <p>
+            <label for="user_email">Почта</label>
+            <br>
+            <input type="text" th:value="${user.email}" class="form-input form-profile-input" id="user_email"  style="pointer-events: none" autocomplete="off" required>
+        </p>
+        <p>
+            <label for="user_qwestion">Проверочный вопрос</label>
+            <br>
+            <input type="text" th:value="${user.qwestion}" class="form-input form-profile-input" id="user_qwestion"  style="pointer-events: none" autocomplete="off" required>
+        </p>
+            <p>
+                <label for="user_qwestion_answer">Ответ на вопрос</label>
+                <br>
+                <input type="text" th:value="${user.qwestionanswer}" class="form-input form-profile-input" id="user_qwestion_answer"  style="pointer-events: none" autocomplete="off" required>
+            </p>
+            <input type="hidden" th:value="${user.id}" class="form-input form-profile-input" id="user_id"  style="pointer-events: none" autocomplete="off" required>
+
+        </div>
+    </div>
+<p>
+    <button type="button" id="form_switch_btn" class="allbuttons" onclick="switchProfileForm(false)" style="display: block;">Редактировать</button>
+    <button type="button" id="form_save_btn" class="allbuttons" onclick="sendUpdateProfileToSv()" style="display: none;">Сохранить</button>
+    <button type="button" id="form_cancel_btn" class="allbuttons" onclick="switchProfileForm(true)" style="display: none;">Отмена</button>
+</p>
+<div class="setting-container" style="display: none"></div>
+</body>
+</html>

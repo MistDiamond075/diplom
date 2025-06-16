@@ -1,0 +1,78 @@
+.calendar-zone{
+    background: #A8A8A8;
+    border: 1px solid #000000;
+    color: black;
+    max-width: 250px;
+    position: absolute;
+    top: 5vh;
+    left: 2.5vh;
+}
+.calendar-zone .calendar-cells{
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    border: 1px solid #000000;
+}
+.calendar-zone .calendar-cell {
+    text-align: center;
+    padding: 6px;
+    border:1px solid black;
+    cursor: pointer;
+}
+.calendar-zone .calendar-empty-cell{
+    text-align: center;
+    padding: 6px;
+    border:1px solid black;
+}
+.calendar-zone .calendar-cell:hover {
+    box-shadow: inset 0 0 0 2px #f16666;
+    /*border-width: 2px;
+    border-collapse: separate;*/
+}
+.calendar-zone .day-header {
+    font-weight: bold;
+    text-align: center;
+    padding: 6px;
+    border:1px solid black;
+}
+.calendar-zone .today {
+    border: 2px solid #ff0000;
+    font-weight: bold;
+}
+.calendar-zone .month-block{
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    border: 2px solid #000000;
+    border-bottom: 1px;
+    padding: 2px;
+    text-align: center;
+}
+.calendar-zone .month-block .month-block-header{
+    font-weight: bold;
+    cursor: pointer;
+}
+.calendar-zone .announcements-zone{
+    border: 2px solid #000000;
+    border-top: 1px;
+    background: #efefef;
+    height: 10vh;
+    max-height: 50vh;
+    overflow-y: auto;
+    font-size:0.9em;
+}
+.calendar-zone .announcements-zone ul{
+    list-style: decimal inside;
+    margin: 0;
+    padding-inline-start: 3px;
+    height: 100%;
+}
+.calendar-zone .calendar-event-nothing{
+    display: flex;
+    width: 100%;
+    height: 100%;
+    text-align: center;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}

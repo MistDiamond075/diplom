@@ -1,0 +1,28 @@
+<!DOCTYPE html><html xmlns:th="https://www.thymeleaf.org" lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title>Восстановление пароля</title>
+    <link rel="stylesheet nofollow" href="/css/allstyle.css">
+    <link rel="stylesheet nofollow" href="/css/loginstyle.css">
+    <script src="/js/loginfn.js"></script>
+</head>
+<body th:if="!${isRestore} or (${uuid}!=null and ${user_id}!=null)">
+    <button type="button" class="allbuttons back-button" onclick="goToLoginPage()">Назад</button>
+    <h2>ВОССТАНОВЛЕНИЕ ПАРОЛЯ</h2>
+    <span class="form-pwrestore-plug" id="form_plug"></span>
+    <form id="pwrestore_form" class="reg-form">
+        <p><input th:if="!${isRestore}" type="text" id="pwr_form_mail" class="form-input form-reg-input" placeholder="Email..." autocomplete="off"></p>
+        <p><input th:if="!${isRestore}" type="text" id="pwr_form_studentcard" class="form-input form-reg-input" placeholder="Номер студенческого билета..." autocomplete="off"  required></p>
+        <p><input th:if="!${isRestore}" type="text" id="pwr_form_qwansw" class="form-input form-reg-input" placeholder="Ответ на проверочный вопрос..." autocomplete="off"  required></p>
+        <p><button th:if="!${isRestore}" type="button" class="allbuttons" onclick="sendPWRestoreRequest()">Восстановить</button></p>
+        <p><input th:if="${isRestore}" type="text" id="pwr_form_newpassword" class="form-input form-reg-input" placeholder="Новый пароль..." autocomplete="off" required></p>
+        <p><input th:if="${isRestore}" type="text" id="pwr_form_newpassword_repeat" class="form-input form-reg-input" placeholder="Повтори новый пароль..." autocomplete="off"  required></p>
+        <input type="hidden" id="pwr_form_uuid" class="form-input form-reg-input" th:value="${uuid}">
+        <input type="hidden" id="pwr_form_user_id" class="form-input form-reg-input" th:value="${user_id}">
+        <p><button th:if="${isRestore}" type="button" class="allbuttons" onclick="PWRestore()">Сохранить</button></p>
+    </form>
+</body>
+</html>

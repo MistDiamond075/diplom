@@ -1,0 +1,131 @@
+<!DOCTYPE html><html xmlns:th="https://www.thymeleaf.org" lang="ru"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title th:text="${task.name}"></title>
+    <link rel="stylesheet nofollow" href="/css/allstyle.css">
+    <link rel="stylesheet nofollow" href="/usercss">
+    <link rel="stylesheet nofollow" href="/css/tasksstyle.css">
+    <script src="/js/main.js"></script>
+    <script src="/js/tasksfn.js"></script>
+</head>
+<body>
+<div class="upside-bar">
+    <div class="overlay">
+        <span class="overlaybutton">
+            <a href="/">Главная</a>
+        </span>
+        <span class="overlaybutton">
+            <a href="/tasks" >Задания</a>
+        </span>
+        <span class="overlaybutton" >
+            <a href="/conferences">Звонки</a>
+        </span>
+        <span class="overlaybutton" style="cursor: pointer">
+            <a href="/journal">Журнал</a>
+        </span>
+        <span class="overlaybutton">
+            <a href="/chats">Чаты</a>
+        </span>
+        <span class="overlaybutton allsettings-button-show" style="justify-content: center;width: fit-content;padding-left: 4px;padding-right: 4px;position: relative">
+            <a href="">🛠</a>
+               <div class="allsettings" style="display: none">
+                    <span class="allsettings-button" onclick="fillSettingsContainer(allSettingsType.SETCSS)">Задать CSS</span>
+                </div>
+        </span>
+    </div>
+</div>
+<div class="info-messages" id="msginfo">
+    <span class="info-messages-text">test</span>
+</div>
+<button type="button" class="allbuttons back-button" onclick="document.location.href='/tasks'">Назад</button>
+<span class="page-header">
+        ЗАДАНИЕ
+    </span>
+    <div class="task-zone"> <!-- th:attr="onclick=${completedtask!=null} ? 'updateCompletedTask('+${completedtask.id}+')':'sendCompletedTaskToSv(null)'" -->
+        <div class="task-button-and-date-zone">
+            <span class="task-date" id="task_dates" th:utext="'Начало: '+${#temporals.format(task.datestart, 'yyyy-MM-dd HH:mm')}+'<br>Конец:  '+${#temporals.format(task.dateend, 'yyyy-MM-dd HH:mm')}"></span>
+            <div class="task-button-and-date">
+                <div class="task-submit-check-date">
+                <span th:text="${completedtask!=null && completedtask.dateofsubmit!='' ? 'Сдано: ' +completedtask.dateofsubmit : ''}"></span>
+                <span th:text="${completedtask != null && completedtask.dateofcheck!='' ? 'Проверено: ' +completedtask.dateofcheck : ''}"></span>
+                 </div>
+                <button type="button" class="allbuttons" style="width: 10vh"  th:attr="onclick=${completedtask!=null} ? 'sendCompletedTaskToSv('+${completedtask.id}+')':'sendCompletedTaskToSv(null)'"
+                        th:if="${userrole == 'ROLE_STUDENT'}" th:text="${completedtask!= null ? 'Сдать повторно':'Сдать'}"></button>
+            </div>
+            <div  th:if="${userrole != 'ROLE_STUDENT'}" style="display: flex;flex-direction: column">
+                <div style="width: fit-content;align-self: end">
+                    <label for="group_selector">Группа</label>
+                    <input id="group_selector" type="text" list="filter_group_list">
+                    <datalist id="filter_group_list">
+                        <option th:each="group: ${groups}" th:value="${group.name}"></option>
+                    </datalist>
+                </div>
+                <div style="width: fit-content;align-self: end">
+                    <label for="student_selector">Студент</label>
+                    <input id="student_selector" type="text" list="filter_student_list">
+                    <datalist id="filter_student_list">
+                        <option th:each="student: ${students}" th:value="${student.user.lastname}+' '+${student.user.firstname}+' '+${student.user.surname}" th:text="${student.groups}" th:data-id="${student.user.id}"></option>
+                    </datalist>
+                </div>
+            </div>
+        </div>
+        <div class="task-name-field">
+            <span th:text="${task.name}"></span>
+        </div>
+        <div class="task-text-field" style="align-self: stretch">
+            <span th:text="${task.text}"></span>
+        </div>
+        <div id="file_task_zone_list" class="task-files-field">
+            <label for="taskfile_list">Файлы: </label>
+            <div style="display: flex;font-family: monospace;margin-top: 10px;flex-direction: row;flex-wrap: wrap;justify-content: flex-start;align-content: center" id="taskfile_list">
+            </div>
+        </div>
+        <br>
+        <span class="task-input-header" th:text="${userrole != 'ROLE_STUDENT' ? 'РАБОТА СТУДЕНТА' : 'ФОРМА СДАЧИ'}"></span>
+        <div class="task-input-zone">
+            <input type="hidden" id="user_id" th:value="${user_id}">
+            <label for="textzone" th:text="${userrole == 'ROLE_STUDENT' ? 'Комментарий' : 'Комментарий студента'}"></label>
+            <textarea maxlength="10000" name="text"  placeholder="Текст..." id="textzone" oninput="formCharCount('textzone','form_char_count')" th:attr="readonly=${userrole != 'ROLE_STUDENT'}"
+                      th:attrappend="required=${userrole == 'ROLE_STUDENT'}" th:text="${completedtask!=null ? completedtask.commentary : ''}"></textarea>
+            <span class="char-counter" id="form_char_count">0/10000</span>
+            <div id="file_upload_zone_list">
+                <label for="file_list">Файлы: </label>
+                <div style="display: flex;font-family: monospace;margin-top: 10px;flex-direction: row;flex-wrap: wrap;justify-content: flex-start;align-content: center" id="file_list" th:text="${completedtask!=null ? completedtask.id:''}">
+                </div>
+            </div>
+            <div class="file-upload-zone" th:if="${userrole=='ROLE_STUDENT'}">
+                <input type="file" id="attached_file" class="form-input" name="formfile" multiple th:if="${userrole=='ROLE_STUDENT'}">
+                <div class="file-upload-zone-overlay">
+                    <span class="file-upload-icon">+</span>
+                    <span class="file-upload-label">Загрузить файлы</span>
+                </div>
+            </div>
+        </div>
+        <div class="task-checking-zone" th:if="${userrole!='ROLE_STUDENT'}">
+            <div style="width:5%">
+                <label for="task_grade">Оценка</label>
+                <br>
+                <input type="number" id="task_grade" placeholder="0" min="0" max="30000" style="width: 100%" th:value="${completedtask!=null ? completedtask.grade : ''}">
+            </div>
+            <input type="hidden" id="compltask_id" th:value="${completedtask!=null ? completedtask.id : ''}">
+            <label for="task_feedback">Комментарий преподавателя</label>
+            <textarea maxlength="10000" name="text"  placeholder="Текст..." id="task_feedback" oninput="formCharCount('task_feedback','task_feedback_char_count')" th:text="${completedtask!=null ? completedtask.feedback : ''}"></textarea>
+            <span class="char-counter" id="task_feedback_char_count" style="width: fit-content;align-self: end;">0/10000</span>
+            <button type="button" class="allbuttons" style="width: 20vh;align-self: center" onclick="checkCompletedTask()">Отправить</button>
+        </div>
+        <div class="task-completed-check-results" th:if="${userrole=='ROLE_STUDENT' && completedtask!=null}">
+            <div th:if="${completedtask.feedback!=''}">
+            <label for="completedtask_feedback">Комментарий преподавателя</label>
+            <textarea id="completedtask_feedback" th:text="${completedtask.feedback}" style="height: fit-content;width: 100%" readonly></textarea>
+            </div>
+            <div th:if="${completedtask.grade!=null}">
+                <span style="font-weight: bold">Оценка: </span>
+                <span th:text="${completedtask.grade}"></span>
+            </div>
+        </div>
+    </div>
+<div class="setting-container" style="display: none"></div>
+</body>
+</html>

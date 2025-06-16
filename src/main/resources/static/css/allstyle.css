@@ -1,0 +1,228 @@
+*{
+    font-family: "Lucida Console";/* "Courier New"; "OCR A Becker RUS-LAT",*/
+}
+body{
+    background-color: #222222;
+    color: #efefef;
+    min-height:100vh;
+    margin-left: 2px;
+    display:flex;
+    flex-direction:column;
+    align-items: center;
+    justify-content: flex-start;
+
+}
+a{
+    color:inherit;
+    text-decoration: inherit;
+}
+.form-input{
+    color: #e3e3e3;
+    font-weight: bold;
+    border-style: double;
+    border-color: #717171;
+    background: #414141 !important;
+    height: 1.5em;
+}
+.form-input::placeholder{
+    color: #D8D8D8;
+}
+.upside-bar{
+    align-self: flex-start;
+}
+.overlay{
+    position: fixed;
+    z-index: 1;
+    width: fit-content;
+    height: 1em;
+    color: black;
+    background: #609B01;
+    text-decoration: none;
+    top: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+}
+.overlaybutton{
+    border-style: solid;
+    border-width: 1px;
+    border-color: black;
+    padding-left: 2px;
+    padding-right: 2px;
+    display: flex;
+    width: 8vh;
+    height: 100%;
+    align-items: flex-end;
+    justify-content: flex-start;
+}
+.overlaybutton a:hover{
+    font-weight: bold;
+}
+.allsettings{
+    background: #609b01;
+    color: black;
+    z-index: 2;
+    position: absolute;
+    top: 100%;
+    min-width: fit-content;
+    white-space: nowrap;
+}
+.allsettings-button{
+    cursor: pointer;
+    padding: 1px;
+    background: #91c937;
+    border: 2px solid black;
+}
+.allsettings-button:hover{
+    font-weight: bold;
+}
+.setting-container{
+    background: #515151;
+    padding: 5px;
+    position: absolute;
+    top: 20%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+}
+.setting-container textarea{
+    height: 150px;
+    width: 250px;
+    resize: none;
+}
+.info-messages{
+    position: fixed;
+    width: fit-content;
+    font-family: "Courier-New";
+    height: 1.5em;
+    top: 5%;
+    text-align: center;
+    background: rgba(197, 54, 54, 0.82);
+    color: #ffffff;
+    border-radius: 15px;
+    padding: 5px;
+    display: none;
+    align-items: center;
+}
+.page-header{
+    color: white;
+    font-weight: bold;
+    font-size: 3em;
+    margin-bottom: 20px;
+}
+.allbuttons{
+    background: #07C32A;
+    color: black;
+    width:fit-content;
+    height: 4vh;
+    border-style: solid;
+    border-width: 1px;
+    border-color: black;
+    cursor: pointer;
+}
+.allbuttons:hover{
+    border-color: #bae098;
+    border-width: 3px;
+    font-weight: bold;
+}
+.redirect-buttons{
+    width:20vh;
+}
+.exit-profile-buttons-zone{
+    align-self: end;
+}
+.exit-profile-buttons-zone button{
+    width: 10vh;
+}
+.exit-button{
+    margin-left: 5px;
+}
+.profile-button{
+    margin-right: 5px;
+}
+.back-button{
+    align-self: end;
+    width: 10vh;
+}
+.main-logo{
+    display: flex;
+    flex-direction: column;
+}
+.char-counter{
+    float: right;
+    color: #252525;
+    font-size: 0.8em;
+}
+.file-upload-zone{
+    position: relative;
+    width: 100%;
+    height: 100px;
+    border-width: 1px;
+    border-style: double;
+    border-color: #000000;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: #f9f9f9;
+    cursor: pointer;
+}
+.file-upload-zone input[type="file"]{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+.file-upload-zone-overlay{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    pointer-events: none;
+}
+.file-upload-icon{
+    font-size: 2em;
+    color: #555;
+    margin-bottom: 8px;
+}
+.file-upload-label{
+    font-size: 0.7em;
+}
+.settings-btn{
+    cursor: pointer;
+}
+.settings-btn:hover{
+    text-shadow: -1px -1px 0 black, 1px -1px 0 black, -1px 1px 0 black, 1px 1px 0 black;
+}
+.settings-block{
+    position: absolute;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: flex-start;
+    background: white;
+    border: 1px solid black;
+    border-bottom: 0;
+    z-index: 3;
+}
+.setting-element{
+    border: 0 solid black;
+    border-bottom: 1px;
+    width: 100%;
+    margin: 0;
+    text-align: start;
+    font-size: 0.9em;
+    height: 1.5em;
+    white-space: nowrap;
+}
+.setting-element:hover{
+    background: #009100;
+    color: white;
+}

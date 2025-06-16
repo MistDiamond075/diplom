@@ -1,0 +1,66 @@
+<!DOCTYPE html><html xmlns:th="https://www.thymeleaf.org" lang="ru"><head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8">
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+    <title th:text="${videocall.conferencesId.name}"></title>
+    <link rel="stylesheet nofollow" href="/css/allstyle.css">
+    <link rel="stylesheet nofollow" href="/usercss">
+    <link rel="stylesheet nofollow" href="/css/videocallsstyle.css">
+    <script src="/js/main.js"></script>
+    <script src="/js/videocallsfn.js"></script>
+    <script src="/js/janus/janus.js"></script>
+    <script src="/js/janus/adapter-latest.js"></script>
+    <script src="/js/janus/crypto-js.min.js"></script>
+</head>
+<body>
+    <button type="button" class="allbuttons back-button" onclick="leave()">Отключиться</button>
+    <span class="page-header" th:text="${videocall.conferencesId.name}"></span>
+    <div class="videocall-zone">
+        <div class="video-zone">
+            <div class="video-display">
+                <div class="own-video">
+                    <video  id="video_display_own" autoplay muted></video>
+                </div>
+                <div id="remote_videos_container" class="remote-videos-zone"></div>
+            </div>
+            <div class="control-panel">
+                <div class="videocall-setting-zone">
+                    <button type="button" id="microstate" class="control-button videocall-setting-button-off"
+                            onclick="updateMicrophoneState()">
+                    </button>
+                    <span class="videocall-setting-header">Микрофон</span>
+                </div>
+                <div class="videocall-setting-zone">
+                    <button type="button" id="camstate" class="control-button videocall-setting-button-off" onclick="updateCameraState()"></button>
+                    <span class="videocall-setting-header">Веб-камера</span>
+                </div>
+                <div class="videocall-setting-zone">
+                    <button type="button" id="soundstate" class=" control-button videocall-setting-button-off" onclick="updateSoundState()"></button>
+                    <span class="videocall-setting-header">Звук</span>
+                </div>
+                <div class="videocall-setting-zone">
+                    <button type="button" id="demostate" class="control-button videocall-setting-button-off" onclick="updateDemonstrationState()"></button>
+                    <span class="videocall-setting-header">Демонстрация</span>
+                </div>
+            </div>
+        </div>
+        <div class="chat-and-userlist-zone">
+            <div class="user-list-zone">
+            </div>
+            <div class="chat-zone">
+                <div class="chat-block"></div>
+                <div class="message-block">
+                    <input type="text" id="message_input" class="message-field" placeholder="Сообщение..." autocomplete="false" required>
+                    <button type="button" onclick="sendMessageToChat()">►</button>
+                </div>
+                <div id="participants_list" class="participants-dropdown" style="display:none; position:absolute;"></div>
+            </div>
+        </div>
+    </div>
+    <div class="info-messages">
+        <span class="info-messages-text">test</span>
+    </div>
+<input type="hidden" id="videocall_id" th:value="${videocall.id}">
+</body>
+</html>

@@ -1,0 +1,91 @@
+.journal-zone-all{
+    display: flex;
+    flex-direction: row;
+    width: 100%;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+}
+.journal-zone{
+    display: flex;
+    flex-wrap: wrap;
+    flex-direction: column;
+    align-content: stretch;
+    justify-content: space-between;
+    align-items: center;
+}
+.journal-table{
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: stretch;
+    min-width: 60%;
+    max-width: 65%;
+    max-height: 75%;
+}
+.journal-table-header{
+    font-weight: bold;
+    font-size: 1.2em;
+}
+.journal-table table{
+    background: #9F9F9F;
+    border-collapse: collapse;
+}
+.journal-table tbody{
+    border-style: solid;
+    border-color: black;
+    border-width: 3px;
+    color: black;
+    text-align: center;
+}
+.journal-table th,td{
+    border-style: solid;
+    border-color: black;
+    border-width: 2px;
+}
+.journal-filter-zone{
+    min-width: 60%;
+    max-width: 65%;
+    display: flex;
+    flex-direction: row;
+}
+.journal-datepicker{
+    align-self: start;
+    margin-right: 15px;
+}
+.form-journal{
+    align-self: stretch;
+    position: relative;
+    right: 2%;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: flex-start;
+    justify-content: center;
+    width: fit-content;
+}
+.form-journal input:not(input[type="radio"],input[type="checkbox"]){
+    width: 80%;
+}
+.form-journal-btn{
+    width: 100%;
+}
+.filter-zone{
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    margin-left: 10px;
+}
+.table-action-plug{
+    font-style: italic;
+    color:#00ffde;
+}
+.task-link{
+    color: #001dff;
+    font-weight: 900;
+    text-decoration: none;
+}
+.task-link:hover{
+    color: #005dd5;
+}

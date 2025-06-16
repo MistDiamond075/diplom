@@ -1,0 +1,125 @@
+<!DOCTYPE html><html xmlns:th="https://www.thymeleaf.org" lang="ru"><head>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <meta name="_csrf" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
+  <title>Чаты</title>
+  <link rel="stylesheet nofollow" href="/css/allstyle.css">
+    <link rel="stylesheet nofollow" href="/usercss">
+  <link rel="stylesheet nofollow" href="/css/chatstyle.css">
+  <script src="/js/main.js"></script>
+  <script src="/js/sortfn.js"></script>
+  <script src="/js/chatfn.js"></script>
+</head>
+<body>
+<div class="upside-bar">
+  <div class="overlay">
+        <span class="overlaybutton">
+            <a href="/">Главная</a>
+        </span>
+    <span class="overlaybutton">
+            <a href="/tasks" >Задания</a>
+        </span>
+    <span class="overlaybutton" >
+            <a href="/conferences">Звонки</a>
+        </span>
+    <span class="overlaybutton" style="cursor: pointer">
+            <a href="/journal">Журнал</a>
+        </span>
+    <span class="overlaybutton">
+            <a href="/chats">Чаты</a>
+        </span>
+      <span class="overlaybutton allsettings-button-show" style="justify-content: center;width: fit-content;padding-left: 4px;padding-right: 4px;position: relative">
+            <a href="">🛠</a>
+               <div class="allsettings" style="display: none">
+                    <span class="allsettings-button" onclick="fillSettingsContainer(allSettingsType.SETCSS)">Задать CSS</span>
+                </div>
+        </span>
+  </div>
+</div>
+<div class="info-messages" id="msginfo">
+    <span class="info-messages-text">test</span>
+</div>
+<button type="button" class="allbuttons back-button" onclick="document.location.href='/'">Назад</button>
+<span class="page-header">
+        ЧАТЫ
+</span>
+<div id="chats_filters" class="chats-filters">
+    <button type="button" class="allbuttons" onclick="showFilters('filter_zone')" style="margin-right: 5px">Фильтры</button>
+    <div id="filter_zone" class="filter-zone" style="display: none">
+        <div>
+            <label for="filter_subject">Предмет</label>
+            <br>
+            <input type="text" id="filter_subject" class="filter-element form-input" list="filter_subject_list" placeholder="Предмет..." autocomplete="off">
+            <datalist id="filter_subject_list">
+                <option th:each="subject: ${subject_list}" th:value="${subject.name}"></option>
+            </datalist>
+        </div>
+        <div>
+            <label for="filter_name">Название</label>
+            <br>
+            <input type="text" id="filter_name" class="filter-element form-input" placeholder="Название...">
+        </div>
+        <div>
+            <label for="filter_group">Группа</label>
+            <br>
+            <input type="text" id="filter_group" class="filter-element form-input" list="filter_group_list" placeholder="Группа..." autocomplete="off">
+            <datalist id="filter_group_list">
+                <option th:each="group: ${group_list}" th:value="${group.name}"></option>
+            </datalist>
+        </div>
+    </div>
+</div>
+<div class="chats-zone-all">
+    <div class="chats-zone" th:if="${chatList}!=null">
+        <div th:id="'chat_'+${chat.chat.id}" class="chat" th:each="chat,iterator: ${chatList}" th:attr="onclick='loadChatData('+${chat.chat.id}+')'">
+            <div>
+                <span class="chat-name" th:text="${chat.chat.name}"></span>
+                <br>
+                <span class="chat-subject"  th:text="${chat.chat.subjectId!=null ? chat.chat.subjectId.name : ''}"></span>
+                <br>
+                <span class="chat-groups" th:if="${chat.chat.groupId!=null}" th:text="${chat.chat.groupId.name}"></span>
+                <br th:if="${chat.chat.groupId!=null}">
+                <div class="chat-users">
+                    <div th:each="chatuser, iterator : ${chat.user}" style="display: flex; flex-direction: row;align-items: center;margin-right: 10px;">
+                        <img th:if="${iterator.index}<3" th:src="'/useravatar/'+${chatuser.id}">
+                        <span th:if="${iterator.index}<3" class="chat-user" th:text="${chatuser.login}"></span>
+                        <span th:if="${iterator.index}==3" th:text="'+'+${chat.user.size()-3}" class="chat-user" style="font-weight: bold;font-style: normal"></span>
+                    </div>
+                </div>
+            </div>
+            <div style="position: absolute;right: 0">
+                <span th:id="'button_settings_'+${chat.chat.id}" class="chat-settings-btn" th:attr="onclick='showSettingsMenu('+${chat.chat.id}+')'">⚙️</span>
+                <div th:id="'settings_'+${chat.chat.id}" class="settings-block" style="display: none">
+                    <button type="button" class="setting-element" th:attr="onclick='redirectToChatUpdatePage('+${chat.chat.id}+')'">Изменить</button>
+                    <button type="button" class="setting-element" th:attr="onclick='deleteChatFromSv('+${chat.chat.id}+',\''+${chat.chat.name}+'\')'">Удалить</button>
+                </div>
+            </div>
+        </div>
+        <span th:if="${chatList}==null or ${chatList.size()==0}" style="width: 100%;height: 4em;color: white;text-align: center;display: block;margin-top: 10px">Ничего нет ¯\_(ツ)_/¯</span>
+        <div class="chats-controls">
+            <button type="button" class="allbuttons" onclick="window.location.href='chat/create'">Создать</button>
+        </div>
+    </div>
+    <div class="chat-block" id="chat_messages_">
+        <div class="chat-header-zone">
+            <span class="chat-header"></span>
+            <div class="chat-users-button-and-menu">
+                <img class="chat-users-button" id="users_menu_button" src="/files/icons/chatusers.png">
+                <div class="chat-users-menu" id="users_menu" style="display: none">
+
+                </div>
+            </div>
+        </div>
+        <div class="messages-list"></div>
+        <div class="message-block">
+            <textarea type="text" id="message_input" class="message-field" placeholder="Сообщение..." title="Shift+enter для новой строки" autocomplete="false" required></textarea>
+            <input type="hidden" id="message_input_chat_id" required>
+            <button type="button" title="Shift+enter для новой строки" onclick="sendMessageToChat()">►</button>
+        </div>
+    </div>
+</div>
+<input type="hidden" id="user_id" th:value="${user_id}">
+<div class="setting-container" style="display: none"></div>
+</body>
+</html>
