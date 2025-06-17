@@ -11,7 +11,6 @@ import com.diplom.diplom.misc.utils.Parser;
 import com.diplom.diplom.repository.*;
 import jakarta.persistence.LockTimeoutException;
 import jakarta.transaction.Transactional;
-import org.hibernate.Hibernate;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.PessimisticLockingFailureException;
@@ -32,22 +31,19 @@ public class ServiceVideocalls {
     private final RepConferences rConferences;
     private final RepVideocallsHasUser rVideocallsHasUser;
     private final RepVideocallsHasUserProperties rVideocallsHasUserProperties;
-    private final ServiceVideocallsChat srvVideocallChat;
     private final ServiceVideocallsJanusAPI srvVideocallsJanusAPI;
-    private final ConfUrls appurls;
+
     public enum UpdateActions {AUDIO, VIDEO, DEMONSTRATION,REACTION,BAN,SOUND}
     public enum LeaveReasons {EXIT,RELOAD}
 
     @Autowired
-    public ServiceVideocalls(RepVideocalls rVideocalls, RepUser rUser, RepConferences rConferences, RepVideocallsHasUser rVideocallsHasUser, RepUserfiles rUserfiles, RepVideocallsHasUserProperties rVideocallsHasUserProperties, RepVideocallChat rVideocallChat, ServiceVideocallsChat srvVideocallChat, ServiceVideocallsJanusAPI srvVideocallsJanusAPI, ConfUrls appurls) {
+    public ServiceVideocalls(RepVideocalls rVideocalls, RepUser rUser, RepConferences rConferences, RepVideocallsHasUser rVideocallsHasUser, RepVideocallsHasUserProperties rVideocallsHasUserProperties, ServiceVideocallsJanusAPI srvVideocallsJanusAPI, ConfUrls appurls) {
         this.rVideocalls = rVideocalls;
         this.rUser = rUser;
         this.rConferences = rConferences;
         this.rVideocallsHasUser = rVideocallsHasUser;
         this.rVideocallsHasUserProperties = rVideocallsHasUserProperties;
-        this.srvVideocallChat = srvVideocallChat;
         this.srvVideocallsJanusAPI = srvVideocallsJanusAPI;
-        this.appurls = appurls;
     }
 
     public List<EntVideocalls> getVideocalls(){
@@ -114,6 +110,14 @@ public class ServiceVideocalls {
                 "Видеозвонок не найден",
                 EntVideocalls.class
         ));
+        List<EntVideocallsHasUser> existingUser=rVideocallsHasUser.findAllByVideocalluserId(user);
+        if(!existingUser.isEmpty()){
+            for(EntVideocallsHasUser v:existingUser){
+                if(v.getConnected()){
+                    throw new AccessException(HttpStatus.BAD_REQUEST,"user tried to connect to vide ocall when them was already connected","Вы уже подключены к другой видеоконференции", null);
+                }
+            }
+        }
         Optional<EntVideocallsHasUser> videocalldataFromDb=rVideocallsHasUser.findByVideocalluserId(user,videocall);
         EntVideocallsHasUser videocallhasuser;
         if(videocalldataFromDb.isEmpty()) {
@@ -465,18 +469,5 @@ public class ServiceVideocalls {
 
     public void updateUserConnectionStatus(Long userId,boolean connected){
         rVideocallsHasUser.updateConnectionStatus(userId,connected);
-    }
-
-    private JSONObject generateRequestForUserUpdates(String action,boolean state,boolean janus){
-        JSONObject message=new JSONObject()
-                .put("request","configure")
-                .put(action,state);
-        JSONObject data=new JSONObject()
-                .put("message",message);
-        JSONObject request=new JSONObject()
-                .put("event","configure")
-                .put("type",janus ? "janus" : "other")
-                .put("data",data);
-        return request;
     }
 }

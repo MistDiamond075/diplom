@@ -21,6 +21,8 @@ public interface RepVideocallsHasUser extends CrudRepository<EntVideocallsHasUse
     void deleteAllByVideocallsId(EntVideocalls videocallsId);
     List<EntVideocallsHasUser> findAllByVideocallsId(EntVideocalls videocall);
 
+    List<EntVideocallsHasUser> findAllByVideocalluserId(EntUser videocalluserId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT h FROM EntVideocallsHasUser h WHERE h.videocalluserId = :user AND h.videocallsId = :call")
     Optional<EntVideocallsHasUser> findByVideocalluserIdwithLock(@Param("user") EntUser user, @Param("call") EntVideocalls videocall);
