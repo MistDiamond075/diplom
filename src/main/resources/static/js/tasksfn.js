@@ -305,8 +305,8 @@ function getCompletedTasksFilesFromSv(fileid){
         console.log(fileid);
     document.getElementById('file_list').innerHTML='';
     let str_url=window.location.href.toString().includes('?') ? window.location.href.toString().substring(0,window.location.href.toString().indexOf('?')):window.location.href;
-        const url= str_url+ '/completedTask/file/' + fileid.toString();
-        fetch(url, {
+        const url= str_url+ '/completedTask/file/';
+        fetch(url + fileid.toString(), {
             method: 'get'
         }).then(response => {
             if (!response.ok) {
@@ -324,7 +324,7 @@ function getCompletedTasksFilesFromSv(fileid){
                 document.getElementById('file_list').appendChild(div);
                 const element=document.createElement('a');
                 element.innerText=file.name+'.'+file.type+'  ';
-                element.href=url+'/view?'+new URLSearchParams({path:file.url});
+                element.href=url+'/'+file.id+'/view';
                 element.target="_blank";
                 element.rel="noopener noreferrer";
             div.appendChild(element);
