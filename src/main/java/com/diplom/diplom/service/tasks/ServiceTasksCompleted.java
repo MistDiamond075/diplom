@@ -151,7 +151,7 @@ public class ServiceTasksCompleted {
         task.setCommentary(Parser.parseXssText(newtask.getCommentary()));
         task.setDateofsubmit(newtask.getDateofsubmit());
         if(files!=null){
-            srvCompletedtasksfiles.addFiles(files,newtask,newtask.getUserId().getId());
+            srvCompletedtasksfiles.addFiles(files,task,task.getUserId().getId());
         }
         rTasksCompleted.save(task);
         return task;
