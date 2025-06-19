@@ -41,9 +41,9 @@ public class CtrlTasksCompleted {
     }
 
     @PatchMapping("/task/{task_id}/updateTaskCompleted")
-    public @ResponseBody EntTasksCompleted updTasksCompleted(@PathVariable Long task_id,@RequestBody EntTasksCompleted task, @AuthenticationPrincipal DiplomUserDetails userDetails) throws AccessException, EntityException {
+    public @ResponseBody EntTasksCompleted updTasksCompleted(@PathVariable Long task_id,@RequestPart(value="taskdata") EntTasksCompleted task,@RequestPart(value="files",required = false) MultipartFile[] files,  @AuthenticationPrincipal DiplomUserDetails userDetails) throws AccessException, EntityException {
         task.setId(task_id);
-        return srvTasksCompleted.updateTaskByUser(task,null,userDetails);
+        return srvTasksCompleted.updateTaskByUser(task,files,userDetails);
     }
 
     @PatchMapping("/task/{task_id}/checkTaskCompleted")
