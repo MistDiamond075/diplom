@@ -1185,7 +1185,12 @@ function switchToFullscreen(elementId){
 function ScreenSharing(videoroomHandle,start) {
     if(start) {
         replaceDisplayStreams(navigator.mediaDevices.getDisplayMedia({
-            video: true,
+            video: {
+                frameRate: { ideal: 30, max: 30 },
+                width: { ideal: 1280 },
+                height: { ideal: 720 },
+                resizeMode: "crop-and-scale" // или "none", "fit"
+            },
             audio: false
         }), videoroomHandle, false);
         isDemonstrationActive=true;
