@@ -95,10 +95,10 @@ public class CtrlPage {
         return "loginpage";
     }
 
-    @GetMapping(path = "/profile")
-    public String getProfilepage(@AuthenticationPrincipal UserDetails userDetails, Model model) throws EntityException {
+    @GetMapping(path ="/profile")
+    public String getProfilepage(@RequestParam(value = "id",required = false) Long userId,@AuthenticationPrincipal UserDetails userDetails, Model model) throws EntityException {
         String username=Objects.requireNonNull(userDetails).getUsername();
-        EntUser user=srvUser.getUserByUsername(Objects.requireNonNull(username));
+        EntUser user=userId!=null ? srvUser.getOtherUserProfile(userId) : srvUser.getUserByUsername(Objects.requireNonNull(username));
         String groupNames=null;
         model.addAttribute("user",user);
         if(user!=null) {
@@ -118,6 +118,8 @@ public class CtrlPage {
             model.addAttribute("userroles",null);
         }
         List<EntGroup> groupsAll=srvGroup.getGroups();
+        boolean ownProfile=userId!=null;
+        model.addAttribute("ownProfile",ownProfile);
         model.addAttribute("groupNames", groupNames);
         model.addAttribute("groups", groupsAll);
         return "profilepage";

@@ -59,7 +59,7 @@
             <label for="user_login">Логин</label>
             <br>
             <input type="text" th:value="${user.login}"id="user_login"  class="form-input form-profile-input" style="pointer-events: none" autocomplete="off" required></p>
-            <p>
+            <p th:if="${user.password!=null}">
                 <label for="user_password">Пароль</label>
                 <br>
                 <input type="password" th:value="${user.password}" class="form-input form-profile-input" id="user_password"  style="pointer-events: none" autocomplete="off" required>
@@ -77,7 +77,7 @@
                 <option th:each="group : ${groups}" th:value="${group.name}"></option>
             </datalist>
         </p>
-        <p>
+        <p th:if="${user.studentcard!=null}">
             <label for="user_studentcard">Студенческий билет</label>
             <br>
             <input type="text" th:value="${user.studentcard}" class="form-input form-profile-input" id="user_studentcard"  style="pointer-events: none" autocomplete="off" required>
@@ -102,17 +102,17 @@
             <br>
             <input type="date" th:value="${user.dateofbirth}" class="form-input form-profile-input" id="user_birthdate"  style="pointer-events: none" autocomplete="off" required>
         </p>
-        <p>
+        <p th:if="${user.email!=null}">
             <label for="user_email">Почта</label>
             <br>
             <input type="text" th:value="${user.email}" class="form-input form-profile-input" id="user_email"  style="pointer-events: none" autocomplete="off" required>
         </p>
-        <p>
+        <p th:if="${user.qwestion!=null}">
             <label for="user_qwestion">Проверочный вопрос</label>
             <br>
             <input type="text" th:value="${user.qwestion}" class="form-input form-profile-input" id="user_qwestion"  style="pointer-events: none" autocomplete="off" required>
         </p>
-            <p>
+            <p th:if="${user.qwestionanswer!=null}">
                 <label for="user_qwestion_answer">Ответ на вопрос</label>
                 <br>
                 <input type="text" th:value="${user.qwestionanswer}" class="form-input form-profile-input" id="user_qwestion_answer"  style="pointer-events: none" autocomplete="off" required>
@@ -121,7 +121,7 @@
 
         </div>
     </div>
-<p>
+<p th:if="${ownProfile}">
     <button type="button" id="form_switch_btn" class="allbuttons" onclick="switchProfileForm(false)" style="display: block;">Редактировать</button>
     <button type="button" id="form_save_btn" class="allbuttons" onclick="sendUpdateProfileToSv()" style="display: none;">Сохранить</button>
     <button type="button" id="form_cancel_btn" class="allbuttons" onclick="switchProfileForm(true)" style="display: none;">Отмена</button>

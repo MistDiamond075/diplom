@@ -138,7 +138,7 @@ function deleteTaskFromSv(id,taskname){
     });
 }
 
-function sendCompletedTaskToSv(id){
+function sendCompletedTaskToSv(id,update=false){
     if(!task_form_processing) {
         task_form_processing = true;
         const form_data = new FormData();
@@ -161,7 +161,7 @@ function sendCompletedTaskToSv(id){
              files.forEach(file => form_data.append('files',file));
         }
         form_data.append('taskdata',new Blob([JSON.stringify(senddata)],{type: 'application/json'}));
-        fetch(window.location.href+'/addTaskCompleted',{
+        fetch(window.location.href+'/'+(update ? 'update' : 'add')+'TaskCompleted',{
             method:'post',
             headers: {
                 'Accept': 'application/json',

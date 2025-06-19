@@ -79,7 +79,7 @@ public class Parser {
                 .replaceAll("\\[/spoiler]", "</span>")
                 .replaceAll("\\[cursive]", "<span class=\"txt-cursive\">")
                 .replaceAll("\\[/cursive]", "</span>")
-                .replaceAll("(https?://\\\\S+)","<a href=\"$1\" target=\"_blank\">$1</a>");
+                .replaceAll("(https?://[^\\s\"<>]+)","<a href=\"$1\" target=\"_blank\">$1</a>");
         Document doc=Jsoup.parse(newtext);
         doc.outputSettings().prettyPrint(false);
         return doc.body().html();

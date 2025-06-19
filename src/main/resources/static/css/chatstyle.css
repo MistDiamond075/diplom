@@ -207,6 +207,10 @@ textarea{
     padding: 3px;
     box-sizing: border-box;
     border: 1px solid black;
+    cursor: pointer;
+}
+.users-menu-element:hover{
+    background: #818181;
 }
 .users-menu-avatar{
     width:25px;
@@ -301,6 +305,13 @@ textarea{
     word-break: break-word;
     white-space: pre-wrap;
     max-width: none;
+}
+.chat-message-text a{
+    color: #ebbb00;
+    font-family: "Courier New";
+}
+.chat-message-text a:hover{
+    text-shadow: 0 0 10px #ffe503;
 }
 .chat-message-deletebutton{
     opacity: 0;

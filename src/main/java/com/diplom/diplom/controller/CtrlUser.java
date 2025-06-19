@@ -35,7 +35,7 @@ public class CtrlUser {
     @GetMapping(path="/admin/menu/getUserById/{id}")
     @Secured("ROLE_ADMIN")
     public @ResponseBody DTOUserUpdate getUserById(@PathVariable Long id) throws EntityException {
-        return srvUser.getDTOUserById(id);
+        return srvUser.getFullDTOUserById(id);
     }
 
     @GetMapping(path = "/admin/menu/getUserByLogin")

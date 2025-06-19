@@ -109,7 +109,7 @@ public class ServiceUser {
       return rUser.findAllByRolesIn(roleList);
     }
 
-    public DTOUserUpdate getDTOUserById(Long id) throws EntityException {
+    public DTOUserUpdate getFullDTOUserById(Long id) throws EntityException {
         EntUser user=rUser.findById(id).orElseThrow(()->new EntityException(
                 HttpStatus.NOT_FOUND,
                 "user not found when getting by id "+id,
@@ -130,6 +130,25 @@ public class ServiceUser {
                 (user.getGroups()!=null ? user.getGroups().stream().map(EntGroup::getName).toList() : null),
                 new ArrayList<>(user.getRoles().stream().map(EntRole::getName).toList())
         );
+    }
+
+    public EntUser getOtherUserProfile(Long id) throws EntityException {
+        EntUser user = rUser.findById(id).orElseThrow(() -> new EntityException(
+                HttpStatus.NOT_FOUND,
+                "user not found when getting by id " + id,
+                "Пользователь не найден",
+                EntUser.class
+        ));
+        EntUser userRet = new EntUser();
+        userRet.setId(user.getId());
+        userRet.setLogin(user.getLogin());
+        userRet.setFirstname(user.getFirstname());
+        userRet.setLastname(user.getLastname());
+        userRet.setSurname(user.getSurname());
+        userRet.setDateofbirth(user.getDateofbirth());
+        userRet.setGroups(user.getGroups());
+        userRet.setRoles(user.getRoles());
+        return userRet;
     }
 
     public EntUser getUserById(Long id) throws EntityException {

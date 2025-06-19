@@ -160,6 +160,7 @@ function loadChatData(chatId,page=0){
         if(container){
             const div=document.createElement('div');
             div.className='users-menu-element';
+            div.setAttribute('onclick','redirectToUserProfile('+user.id+')')
             container.appendChild(div);
             const img=document.createElement('img');
             img.src='/useravatar/'+user.id;
@@ -453,7 +454,7 @@ function menuChatUsersListener(){
             container.style.display=container.style.display==='none' ? '' : 'none';
         });
         document.addEventListener('click',function (event){
-            console.log((event.target===btn || event.target===container));
+            console.log((event.target===btn || container.contains(event.target)));
             if(!(event.target===btn || event.target===container)){
                 console.log(event.target);
                 container.style.display='none';

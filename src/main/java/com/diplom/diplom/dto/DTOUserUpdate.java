@@ -49,6 +49,17 @@ public class DTOUserUpdate {
         this.groupsNames = groupsNames;
     }
 
+    public DTOUserUpdate(Long id, String login, String firstname, String lastname, String surname, String dateofbirth, List<String> groupsNames, List<String> userRoles) {
+        this.id = id;
+        this.login = login;
+        this.firstname = firstname;
+        this.lastname = lastname;
+        this.surname = surname;
+        this.dateofbirth = dateofbirth;
+        this.groupsNames = groupsNames;
+        this.userRoles = userRoles;
+    }
+
     public DTOUserUpdate() {
     }
 

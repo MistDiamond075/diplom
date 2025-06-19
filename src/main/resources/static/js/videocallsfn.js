@@ -1189,7 +1189,7 @@ function ScreenSharing(videoroomHandle,start) {
                 frameRate: { ideal: 30, max: 50 },
                 width: { ideal: 1280 },
                 height: { ideal: 720 },
-                resizeMode: "crop-and-scale" // или "none", "fit"
+                resizeMode: "crop-and-scale"
             },
             audio: false
         }), videoroomHandle, false);
@@ -1212,11 +1212,13 @@ function replaceDisplayStreams(promise,videoroomHandle,camera){
         if (videoSender) {
             videoSender.replaceTrack(screenTrack).then(() => {
                 console.log("✅ Видео заменено на демонстрацию экрана");
+                const maxBitrate=6000000;
+                const bitrate=getAllDemonstrators();
                 videoroomHandle.send({
                     message: {
                         request: "configure",
                         video: true,
-                        bitrate: 3000000
+                        bitrate: Math.min(maxBitrate/bitrate,2000000)
                     }
                 });
             }).catch(err => {
@@ -1261,6 +1263,19 @@ function replaceDisplayStreams(promise,videoroomHandle,camera){
             updateDemonstrationState();
             ScreenSharing(videoroomHandle,false);
         });
+
+    function getAllDemonstrators(){
+        const users=document.querySelectorAll('[class*="user-participant"]');
+        let count=0;
+        users.forEach(user=> {
+            const setting=getParticipantSettingState(user,'demo');
+            const state=parseDefaultStateFromString(setting);
+            if(state===defaultStates.ON){
+                count++;
+            }
+        });
+        return count;
+    }
 }
 
 function updateMicrophoneState(newstate=null) {

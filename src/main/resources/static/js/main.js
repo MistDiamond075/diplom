@@ -9,6 +9,10 @@ class Pair{
     }
 }
 
+function redirectToUserProfile(id=null){
+    window.location.href='/profile'+(id!==null ? '?'+new URLSearchParams({id:id}) : '');
+}
+
 function formCharCount(input_id,counter_id){
     const textarea = document.getElementById(input_id);
     const form_length_max=textarea.getAttribute('maxlength');
