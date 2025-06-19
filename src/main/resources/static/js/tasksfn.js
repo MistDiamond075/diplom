@@ -324,7 +324,7 @@ function getCompletedTasksFilesFromSv(fileid){
                 document.getElementById('file_list').appendChild(div);
                 const element=document.createElement('a');
                 element.innerText=file.name+'.'+file.type+'  ';
-                element.href=url+'/'+file.id+'/view';
+                element.href=url+file.id+'/view';
                 element.target="_blank";
                 element.rel="noopener noreferrer";
             div.appendChild(element);
