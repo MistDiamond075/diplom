@@ -77,10 +77,5 @@ public class ConfSpringSecurity {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new Argon2PasswordEncoder(16,32,2,65536,3);
-       /* String defaultEncodingId = "argon2";
-        Map<String, PasswordEncoder> encoders = new HashMap<>();
-        encoders.put("argon2", new Argon2PasswordEncoder(16,32,2,65536,3));
-        encoders.put("bcrypt", new BCryptPasswordEncoder());
-        return new DelegatingPasswordEncoder(defaultEncodingId, encoders);*/
     }
 }

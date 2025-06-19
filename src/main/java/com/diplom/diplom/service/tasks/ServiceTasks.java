@@ -9,6 +9,7 @@ import com.diplom.diplom.exception.AccessException;
 import com.diplom.diplom.exception.EntityException;
 import com.diplom.diplom.misc.utils.Checker;
 import com.diplom.diplom.misc.utils.FilesProcessor;
+import com.diplom.diplom.misc.utils.Parser;
 import com.diplom.diplom.repository.RepGroup;
 import com.diplom.diplom.repository.RepSubject;
 import com.diplom.diplom.repository.RepTasks;
@@ -89,6 +90,8 @@ public class ServiceTasks {
                     }
                 })
                 .toList();
+        String text=task.getText();
+        task.setText(Parser.parseXssText(text));
         task.setCreatedby(user);
         task.setTasksubjectId(subject);
         task.setGroups(groupList);
@@ -159,7 +162,7 @@ public class ServiceTasks {
             }
         }
         task.setDateend(newtask.getDateend());
-        task.setText(newtask.getText());
+        task.setText(Parser.parseXssText(newtask.getText()));
         task.setName(newtask.getName());
         if(files!=null){
             srvTasksfiles.addFiles(files,task,task.getCreatedby());

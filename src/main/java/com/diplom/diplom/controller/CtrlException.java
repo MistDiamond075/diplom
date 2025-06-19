@@ -2,6 +2,7 @@ package com.diplom.diplom.controller;
 
 import com.diplom.diplom.exception.AccessException;
 import com.diplom.diplom.exception.BaseException;
+import com.diplom.diplom.exception.DataProcessingException;
 import com.diplom.diplom.exception.EntityException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,6 +34,13 @@ public class CtrlException {
     public ResponseEntity<Map<String,Object>> AccesExceptionHandler(AccessException e){
         Map<String,Object> resp=createBaseExceptionResponse(e);
         resp.put("role",e.getUserRole());
+        log.error("e: ", e);
+        return ResponseEntity.status(e.getStatus()).body(resp);
+    }
+
+    @ExceptionHandler(DataProcessingException.class)
+    public ResponseEntity<Map<String,Object>> DataProcessingHandler(DataProcessingException e){
+        Map<String,Object> resp=createBaseExceptionResponse(e);
         log.error("e: ", e);
         return ResponseEntity.status(e.getStatus()).body(resp);
     }

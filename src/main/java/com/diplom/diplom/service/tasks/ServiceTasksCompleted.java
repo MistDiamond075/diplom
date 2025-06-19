@@ -8,6 +8,7 @@ import com.diplom.diplom.entity.EntUser;
 import com.diplom.diplom.exception.AccessException;
 import com.diplom.diplom.exception.EntityException;
 import com.diplom.diplom.misc.utils.Checker;
+import com.diplom.diplom.misc.utils.Parser;
 import com.diplom.diplom.repository.RepJournal;
 import com.diplom.diplom.repository.RepTasks;
 import com.diplom.diplom.repository.RepTasksCompleted;
@@ -105,6 +106,8 @@ public class ServiceTasksCompleted {
             completedtask.setId(task_in_db.get().getId());
             return updateTaskByUser(completedtask,files,userDetails);
         }
+        String text=completedtask.getCommentary();
+        completedtask.setCommentary(Parser.parseXssText(text));
         completedtask.setTasksId(task);
         completedtask.setUserId(user);
         completedtask=rTasksCompleted.save(completedtask);
@@ -145,7 +148,7 @@ public class ServiceTasksCompleted {
         if(!Checker.checkUserIdentity(userDetails,task.getUserId(),rUser)){
             throw new AccessException(HttpStatus.FORBIDDEN,"user identity check failed","Ошибка доступа",userDetails);
         }
-        task.setCommentary(newtask.getCommentary());
+        task.setCommentary(Parser.parseXssText(newtask.getCommentary()));
         task.setDateofsubmit(newtask.getDateofsubmit());
         if(files!=null){
             srvCompletedtasksfiles.addFiles(files,newtask,newtask.getUserId().getId());
@@ -170,7 +173,7 @@ public class ServiceTasksCompleted {
         if(!Checker.checkUserIdentity(userDetails,originaltask.getTasksId().getCreatedby(),rUser)){
             throw new AccessException(HttpStatus.FORBIDDEN,"user identity check failed","Ошибка доступа",userDetails);
         }
-        originaltask.setFeedback(task.getFeedback());
+        originaltask.setFeedback(Parser.parseXssText(task.getFeedback()));
         originaltask.setDateofcheck(task.getDateofcheck());
         originaltask.setGrade(task.getGrade());
         rTasksCompleted.save(originaltask);

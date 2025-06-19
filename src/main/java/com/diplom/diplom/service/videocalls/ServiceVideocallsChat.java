@@ -4,6 +4,7 @@ import com.diplom.diplom.configuration.userdetails.DiplomUserDetails;
 import com.diplom.diplom.dto.DTOMessageVideocall;
 import com.diplom.diplom.entity.*;
 import com.diplom.diplom.exception.AccessException;
+import com.diplom.diplom.misc.utils.Parser;
 import com.diplom.diplom.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.http.HttpStatus;
@@ -49,7 +50,7 @@ public class ServiceVideocallsChat {
         if(message_text.contains("@")){
             replyToUser=rVideocallsHasUser.findByVideocalluserId_Id(replyTo).orElse(null);
         }
-        EntVideocallChat message=new EntVideocallChat(null,message_text, LocalDateTime.now(),videocallHasUser,replyToUser);
+        EntVideocallChat message=new EntVideocallChat(null, Parser.parseXssText(message_text), LocalDateTime.now(),videocallHasUser,replyToUser);
         rVideocallChat.save(message);
         return new DTOMessageVideocall(
                 message.getId(),

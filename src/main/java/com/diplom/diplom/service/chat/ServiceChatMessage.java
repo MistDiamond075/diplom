@@ -9,6 +9,7 @@ import com.diplom.diplom.entity.EntChatUser;
 import com.diplom.diplom.entity.EntUser;
 import com.diplom.diplom.exception.AccessException;
 import com.diplom.diplom.exception.EntityException;
+import com.diplom.diplom.misc.utils.Parser;
 import com.diplom.diplom.repository.RepChat;
 import com.diplom.diplom.repository.RepChatMessage;
 import com.diplom.diplom.repository.RepChatUser;
@@ -105,9 +106,10 @@ public class ServiceChatMessage {
         if(replyId!=null){
             replyTo=rChatMessage.findById(replyId).orElse(null);
         }
+        String text= Parser.parseXssText(msg.getText());
         EntChatMessage message=new EntChatMessage(
                 null,
-                msg.getText(),
+                text,
                 LocalDateTime.now(),
                 chat,
                 user,

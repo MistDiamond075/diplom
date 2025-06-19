@@ -8,6 +8,7 @@ import com.diplom.diplom.exception.AccessException;
 import com.diplom.diplom.exception.EntityException;
 import com.diplom.diplom.misc.utils.Generator;
 import com.diplom.diplom.misc.utils.Checker;
+import com.diplom.diplom.misc.utils.Parser;
 import com.diplom.diplom.repository.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -176,9 +177,14 @@ public class ServiceUser {
 
     @Transactional
     public EntUser addUser(EntUser newuser, String[] groupname) throws EntityException {
-        EntUser user=rUser.findByLogin(newuser.getLogin()).orElse(null);
-        if(user!=null){
-            return null;
+        Optional<EntUser> user=rUser.findByLogin(newuser.getLogin());
+        if(user.isPresent()){
+            throw new EntityException(
+                    HttpStatus.NOT_FOUND,
+                    "user "+newuser.getLogin()+" aldready exist",
+                    "Пользователь уже существует",
+                    EntRole.class
+            );
         }
         EntRole role=rRole.findByName("ROLE_STUDENT").orElseThrow(()->new EntityException(
                 HttpStatus.NOT_FOUND,
@@ -186,6 +192,16 @@ public class ServiceUser {
                 "Роль не найдена",
                 EntRole.class
         ));
+        String login=newuser.getLogin();
+        String fname = newuser.getFirstname();
+        String lname = newuser.getLastname();
+        String surname = newuser.getSurname();
+        String email = newuser.getEmail();
+        newuser.setLogin(Parser.parseXssText(login));
+        newuser.setFirstname(Parser.parseXssText(fname));
+        newuser.setLastname(Parser.parseXssText(lname));
+        newuser.setSurname(Parser.parseXssText(surname));
+        newuser.setEmail(Parser.parseXssText(email));
         List<EntRole> roles=new ArrayList<>();
         roles.add(role);
         newuser.setRoles(roles);
@@ -224,8 +240,17 @@ public class ServiceUser {
         } else {
             user.setPassword(user.getPassword());
         }
-        user.setLogin(newuser.getLogin());
-        user.setEmail(newuser.getEmail());
+        Optional<EntUser> u= rUser.findByLogin(Parser.parseXssText(newuser.getLogin()));
+        if(u.isPresent()){
+            throw new EntityException(
+                    HttpStatus.CONFLICT,
+                    "user already exists",
+                    "Логин "+newuser.getLogin()+" занят",
+                    EntUser.class
+            );
+        }
+        user.setLogin(Parser.parseXssText(newuser.getLogin()));
+        user.setEmail(Parser.parseXssText(newuser.getEmail()));
         List<EntGroup> groups=rGroup.findAllByNameIn(groupname);
         if(!groups.isEmpty()){
             List<EntChatUser> member=new ArrayList<>();
@@ -257,9 +282,9 @@ public class ServiceUser {
             user.setQwestion(newuser.getQwestion());
             user.setQwestionanswer(newuser.getQwestionanswer());
         }
-        user.setFirstname(newuser.getFirstname());
-        user.setLastname(newuser.getLastname());
-        user.setSurname(newuser.getSurname());
+        user.setFirstname(Parser.parseXssText(newuser.getFirstname()));
+        user.setLastname(Parser.parseXssText(newuser.getLastname()));
+        user.setSurname(Parser.parseXssText(newuser.getSurname()));
         user.setStudentcard(newuser.getStudentcard());
         if(admin){
             List<EntRole> roleList=rRole.findByNameIn(dtouser.getUserRoles());
@@ -278,17 +303,17 @@ public class ServiceUser {
                 EntUser.class
         ));
         user.setPassword(Generator.generateCryptedPassword(newuser.getPassword()));
-        user.setLogin(newuser.getLogin());
-        user.setEmail(newuser.getEmail());
-        user.setRoles(newuser.getRoles());
-        user.setGroups(user.getGroups());
-        user.setDateofbirth(newuser.getDateofbirth());
-        user.setQwestion(newuser.getQwestion());
-        user.setQwestionanswer(newuser.getQwestionanswer());
-        user.setFirstname(newuser.getFirstname());
-        user.setLastname(newuser.getLastname());
-        user.setSurname(newuser.getSurname());
-        user.setStudentcard(newuser.getStudentcard());
+       // user.setLogin(newuser.getLogin());
+       // user.setEmail(newuser.getEmail());
+       // user.setRoles(newuser.getRoles());
+       // user.setGroups(user.getGroups());
+       // user.setDateofbirth(newuser.getDateofbirth());
+        //user.setQwestion(newuser.getQwestion());
+        //user.setQwestionanswer(newuser.getQwestionanswer());
+        //user.setFirstname(newuser.getFirstname());
+        //user.setLastname(newuser.getLastname());
+        //user.setSurname(newuser.getSurname());
+        //user.setStudentcard(newuser.getStudentcard());
         rUser.save(user);
         return user;
     }
