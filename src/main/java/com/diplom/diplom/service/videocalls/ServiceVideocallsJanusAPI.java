@@ -59,7 +59,7 @@ public class ServiceVideocallsJanusAPI {
         JSONObject body = new JSONObject()
                 .put("request","create")
                 .put("publishers", roomCapacity)
-                .put("bitrate",512000)
+                .put("bitrate",3000000)
                 .put("audiocodec","opus")
                 .put("audiolevel_ext",true)
                 .put("audiolevel_event",true)

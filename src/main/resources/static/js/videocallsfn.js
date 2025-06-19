@@ -1186,7 +1186,7 @@ function ScreenSharing(videoroomHandle,start) {
     if(start) {
         replaceDisplayStreams(navigator.mediaDevices.getDisplayMedia({
             video: {
-                frameRate: { ideal: 30, max: 30 },
+                frameRate: { ideal: 30, max: 50 },
                 width: { ideal: 1280 },
                 height: { ideal: 720 },
                 resizeMode: "crop-and-scale" // или "none", "fit"
@@ -1216,13 +1216,22 @@ function replaceDisplayStreams(promise,videoroomHandle,camera){
                     message: {
                         request: "configure",
                         video: true,
-                        bitrate: 300000
+                        bitrate: 3000000
                     }
                 });
             }).catch(err => {
                 showInfoMessage("Не удалось переключиться");
                 updateDemonstrationState();
                 ScreenSharing(videoroomHandle,false);
+            });
+            const settings = screenTrack.getSettings();
+            console.log(`🎥 Actual FPS: ${settings.frameRate}, resolution: ${settings.width}x${settings.height}`);
+            videoroomHandle.webrtcStuff.pc.getStats().then(stats=> {
+                stats.forEach(report => {
+                    if (report.type === "outbound-rtp" && report.kind === "video") {
+                        console.log("Sent FPS:", report.framesPerSecond);
+                    }
+                });
             });
         } else {
             console.warn("⚠️ Видео-трек не найден");
