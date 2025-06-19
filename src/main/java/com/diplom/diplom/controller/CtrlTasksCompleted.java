@@ -42,7 +42,6 @@ public class CtrlTasksCompleted {
 
     @PatchMapping("/task/{task_id}/updateTaskCompleted")
     public @ResponseBody EntTasksCompleted updTasksCompleted(@PathVariable Long task_id,@RequestPart(value="taskdata") EntTasksCompleted task,@RequestPart(value="files",required = false) MultipartFile[] files,  @AuthenticationPrincipal DiplomUserDetails userDetails) throws AccessException, EntityException {
-        task.setId(task_id);
         return srvTasksCompleted.updateTaskByUser(task,files,userDetails);
     }
 
