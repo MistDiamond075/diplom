@@ -51,7 +51,7 @@
                 <span th:text="${completedtask!=null && completedtask.dateofsubmit!='' ? 'Сдано: ' +completedtask.dateofsubmit : ''}"></span>
                 <span th:text="${completedtask != null && completedtask.dateofcheck!='' ? 'Проверено: ' +completedtask.dateofcheck : ''}"></span>
                  </div>
-                <button type="button" class="allbuttons" style="width: 10vh"  th:attr="onclick=${completedtask!=null} ? 'sendCompletedTaskToSv('+${completedtask.id}+')':'sendCompletedTaskToSv(null)'"
+                <button type="button" class="allbuttons" style="width: 10vh"  th:attr="onclick=${completedtask!=null} ? 'sendCompletedTaskToSv('+${completedtask.id}+',true)':'sendCompletedTaskToSv(null)'"
                         th:if="${userrole == 'ROLE_STUDENT'}" th:text="${completedtask!= null ? 'Сдать повторно':'Сдать'}"></button>
             </div>
             <div  th:if="${userrole != 'ROLE_STUDENT'}" style="display: flex;flex-direction: column">
