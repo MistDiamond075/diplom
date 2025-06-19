@@ -162,7 +162,7 @@ function sendCompletedTaskToSv(id,update=false){
         }
         form_data.append('taskdata',new Blob([JSON.stringify(senddata)],{type: 'application/json'}));
         fetch(window.location.href+'/'+(update ? 'update' : 'add')+'TaskCompleted',{
-            method:'post',
+            method:update ? 'PATCH' : 'post',
             headers: {
                 'Accept': 'application/json',
                 [csrfHeader]:csrfToken
