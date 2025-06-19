@@ -1215,7 +1215,8 @@ function replaceDisplayStreams(promise,videoroomHandle,camera){
                 videoroomHandle.send({
                     message: {
                         request: "configure",
-                        video: true
+                        video: true,
+                        bitrate: 300000
                     }
                 });
             }).catch(err => {
