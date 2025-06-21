@@ -68,15 +68,21 @@ a{
     top: 100%;
     min-width: fit-content;
     white-space: nowrap;
+    display: flex;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
+    border: solid black 1px;
 }
 .allsettings-button{
     cursor: pointer;
     padding: 1px;
     background: #91c937;
-    border: 2px solid black;
+    border: 1px solid black;
 }
 .allsettings-button:hover{
-    font-weight: bold;
+    text-shadow: 0 1px 0 black;
 }
 .setting-container{
     background: #515151;
@@ -85,13 +91,56 @@ a{
     top: 20%;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     justify-content: space-between;
+    max-height: 70vh;
+    overflow-y: auto;
+}
+.setting-container-header{
+    font-size: 1.1em;
+    align-self: center;
+    font-weight: bold;
+    color: #ffe700;
+    margin-bottom: 5px;
+}
+.settings-ptt-keys{
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: flex-start;
+    margin-bottom: 5px;
+}
+.settings-ptt-keys-inputs{
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    align-items: flex-end;
+}
+.settings-ptt-keys-input-container{
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    margin-right: 2px;
+}
+.settings-ptt-keys button{
+    background: #68996c;
+    cursor: pointer;
+}
+.setting-container label{
+    font-size: 0.8em;
+    color: #ffe700;
 }
 .setting-container textarea{
     height: 150px;
     width: 250px;
     resize: none;
+}
+.settings-selector{
+    margin-bottom: 5px;
+}
+.settings-input{
+    margin-bottom: 5px;
 }
 .info-messages{
     position: fixed;

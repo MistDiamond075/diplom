@@ -3,12 +3,14 @@ package com.diplom.diplom.controller;
 import com.diplom.diplom.configuration.userdetails.DiplomUserDetails;
 import com.diplom.diplom.dto.DTOFile;
 import com.diplom.diplom.dto.DTOUserCss;
+import com.diplom.diplom.dto.DTOUserSettings;
 import com.diplom.diplom.entity.EntUser;
 import com.diplom.diplom.entity.EntUserfiles;
 import com.diplom.diplom.exception.AccessException;
 import com.diplom.diplom.exception.EntityException;
 import com.diplom.diplom.service.user.ServiceUser;
 import com.diplom.diplom.service.user.ServiceUserfiles;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.core.io.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
@@ -50,6 +52,11 @@ public class CtrlUserfiles {
         return srvUserfiles.getUserCss(request,userDetails);
     }
 
+    @GetMapping("/usersettings")
+    public DTOUserSettings getUserSettings(@AuthenticationPrincipal DiplomUserDetails userDetails) throws EntityException, AccessException, JsonProcessingException {
+        return srvUserfiles.getUserSettings(userDetails);
+    }
+
     @PostMapping("/addUserAvatar")
     public @ResponseBody EntUserfiles addUserAvatar(@RequestParam(value = "imgfile",required = false) MultipartFile file, @RequestParam(value = "userId") Long userId, @AuthenticationPrincipal DiplomUserDetails userDetails) throws EntityException, AccessException {
         EntUser user=srvUser.getUserById(userId);
@@ -59,6 +66,11 @@ public class CtrlUserfiles {
     @PostMapping("/addUserCss")
     public void addUserCss(@RequestBody DTOUserCss css,@AuthenticationPrincipal UserDetails userDetails) throws EntityException, AccessException, IOException {
         srvUserfiles.addUserCss(css.getText(),userDetails);
+    }
+
+    @PostMapping("/addUserSettings")
+    public DTOUserSettings addUserSettings(@RequestBody DTOUserSettings settings,@AuthenticationPrincipal DiplomUserDetails userDetails) throws EntityException, AccessException, IOException {
+        return srvUserfiles.addUserSettings(settings,userDetails);
     }
 
     @DeleteMapping("/deleteUserAvatar/{id}")

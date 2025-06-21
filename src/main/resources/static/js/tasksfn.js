@@ -289,7 +289,12 @@ function getCompletedTaskDataFromSv(event){
         }
         return response.json();
     }).then(data =>{
-        document.getElementById('textzone').value=data.commentary;
+        const textContainer=document.getElementById('textzone');
+        if(textContainer.nodeName==='TEXTAREA') {
+            textContainer.value = data.commentary;
+        }else{
+            textContainer.innerHTML = data.commentary;
+        }
         document.getElementById('compltask_id').value=data.id;
         document.getElementById('task_feedback').value=data.feedback;
         document.getElementById('task_grade').value=data.grade !==null ? data.grade : '';

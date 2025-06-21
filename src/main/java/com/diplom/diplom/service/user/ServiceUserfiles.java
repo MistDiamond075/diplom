@@ -4,6 +4,7 @@ import com.diplom.diplom.configuration.ConfPropsPaths;
 import com.diplom.diplom.configuration.userdetails.DiplomUserDetails;
 import com.diplom.diplom.content_management.FilesMGMT;
 import com.diplom.diplom.dto.DTOFile;
+import com.diplom.diplom.dto.DTOUserSettings;
 import com.diplom.diplom.dto.converter.ConverterFileToEntityFile;
 import com.diplom.diplom.entity.EntUser;
 import com.diplom.diplom.entity.EntUserfiles;
@@ -13,6 +14,8 @@ import com.diplom.diplom.misc.utils.Checker;
 import com.diplom.diplom.misc.utils.FilesProcessor;
 import com.diplom.diplom.repository.RepUser;
 import com.diplom.diplom.repository.RepUserfiles;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import net.coobird.thumbnailator.Thumbnails;
@@ -29,6 +32,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -38,12 +42,14 @@ public class ServiceUserfiles {
     private final RepUserfiles rUserfiles;
     private final RepUser rUser;
     private final ConfPropsPaths apppaths;
+    private final ObjectMapper objectMapper;
 
     @Autowired
-    public ServiceUserfiles(RepUserfiles rUserfiles, RepUser rUser, ConfPropsPaths apppaths) {
+    public ServiceUserfiles(RepUserfiles rUserfiles, RepUser rUser, ConfPropsPaths apppaths, ObjectMapper objectMapper) {
         this.rUserfiles = rUserfiles;
         this.rUser = rUser;
         this.apppaths = apppaths;
+        this.objectMapper = objectMapper;
     }
 
     public List<DTOFile> getUserAvatars(){
@@ -104,6 +110,25 @@ public class ServiceUserfiles {
         return response.getStatusCode()!=HttpStatus.NOT_FOUND ? response : ResponseEntity.ok(new ByteArrayResource("".getBytes()));
     }
 
+    public DTOUserSettings getUserSettings(DiplomUserDetails userDetails) throws EntityException, AccessException, JsonProcessingException {
+        if(userDetails==null){
+            throw new AccessException(
+                    HttpStatus.UNAUTHORIZED,
+                    "user details was null",
+                    "Ошибка проверки данных аккаунта",
+                    null
+            );
+        }
+        EntUser user=userDetails.getUser();
+        EntUserfiles file=rUserfiles.findByFilesuserIdAndType(user,EntUserfiles.fileType.SETTINGS).orElseThrow(()->new EntityException(
+                HttpStatus.NOT_FOUND,
+                "settings for user {"+user.getId()+"} "+user.getLogin()+" not found",
+                "Настройки не найдены",
+                EntUserfiles.class
+        ));
+        return objectMapper.readValue(file.getPath(),DTOUserSettings.class);
+    }
+
     @Transactional
     public EntUserfiles addUserAvatar(MultipartFile file, EntUser userId, DiplomUserDetails userDetails) throws AccessException {
         try{
@@ -146,6 +171,24 @@ public class ServiceUserfiles {
             EntUserfiles newfile=new EntUserfiles(null,path,user,EntUserfiles.fileType.CSS);
             rUserfiles.save(newfile);
         }
+    }
+
+    @Transactional
+    public DTOUserSettings addUserSettings(DTOUserSettings dtoSettings,DiplomUserDetails userDetails) throws AccessException, EntityException, IOException {
+        if(userDetails==null){
+            throw new AccessException(
+                    HttpStatus.UNAUTHORIZED,
+                    "user details was null",
+                    "Ошибка проверки данных аккаунта",
+                    null
+            );
+        }
+        EntUser user= userDetails.getUser();
+        File jsonFile = Paths.get(apppaths.getUserfilesfolder(), "settings_"+user.getId()+ ".json").toFile();
+        objectMapper.writerWithDefaultPrettyPrinter().writeValue(jsonFile, dtoSettings);
+        EntUserfiles file=new EntUserfiles(null,jsonFile.getPath(),user,EntUserfiles.fileType.SETTINGS);
+        rUserfiles.save(file);
+        return dtoSettings;
     }
 
     @Transactional

@@ -13,6 +13,24 @@ textarea{
     border-style: solid;
     border-color: black;
 }
+.textzone-none-input{
+    border: black solid 1px;
+    background: white;
+    height: 100px;
+    width: 100%;
+    min-width: 100%;
+    overflow-y: auto;
+    font-size: 0.9em;
+    white-space: pre-wrap;
+}
+.textzone-none-input a{
+    font-family: "Courier New";
+    color: blue;
+    font-weight: bold;
+}
+.textzone-none-input a:hover{
+    text-shadow: 0 0 1px blue;
+}
 .tasks-zone{
     width:85%;
 }

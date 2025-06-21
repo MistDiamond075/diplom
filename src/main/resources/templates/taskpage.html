@@ -87,8 +87,11 @@
         <div class="task-input-zone">
             <input type="hidden" id="user_id" th:value="${user_id}">
             <label for="textzone" th:text="${userrole == 'ROLE_STUDENT' ? 'Комментарий' : 'Комментарий студента'}"></label>
-            <textarea maxlength="10000" name="text"  placeholder="Текст..." id="textzone" oninput="formCharCount('textzone','form_char_count')" th:attr="readonly=${userrole != 'ROLE_STUDENT'}"
+            <textarea th:if="${userrole=='ROLE_STUDENT'}" maxlength="10000" name="text"  placeholder="Текст..." id="textzone" oninput="formCharCount('textzone','form_char_count')" th:attr="readonly=${userrole != 'ROLE_STUDENT'}"
                       th:attrappend="required=${userrole == 'ROLE_STUDENT'}" th:text="${completedtask!=null ? completedtask.commentary : ''}"></textarea>
+            <div id="textzone" class="textzone-none-input" th:if="${userrole!='ROLE_STUDENT'}">
+                <span class="textzone-text" th:text="${completedtask!=null ? completedtask.commentary : ''}"></span>
+            </div>
             <span class="char-counter" id="form_char_count">0/10000</span>
             <div id="file_upload_zone_list">
                 <label for="file_list">Файлы: </label>
@@ -118,7 +121,9 @@
         <div class="task-completed-check-results" th:if="${userrole=='ROLE_STUDENT' && completedtask!=null}">
             <div th:if="${completedtask.feedback!=''}">
             <label for="completedtask_feedback">Комментарий преподавателя</label>
-            <textarea id="completedtask_feedback" th:text="${completedtask.feedback}" style="height: fit-content;width: 100%" readonly></textarea>
+            <div id="completedtask_feedback" class="textzone-none-input" th:utext="${completedtask.feedback}" style="height: fit-content;width: 100%">
+
+            </div>
             </div>
             <div th:if="${completedtask.grade!=null}">
                 <span style="font-weight: bold">Оценка: </span>

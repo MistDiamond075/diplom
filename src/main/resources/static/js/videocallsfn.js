@@ -18,6 +18,7 @@ const feedId_userId=new Map();
 const Actions= {MICROPHONE: 'AUDIO', CAMERA:'VIDEO',BAN:'BAN',SOUND:'SOUND',DEMONSTRATION:'DEMONSTRATION'};
 const defaultStates={OFF:'OFF',ON:'ON',MUTED_BY_ADMIN:'MUTED_BY_ADMIN'};
 const iconsVideocallUrl='/files/icons/videocall';
+const sndStartDemo = new Audio('/files/sound/videocall/start.wav');
 
 function isStringDefaultStates(str){
     return Object.values(defaultStates).includes(str);
@@ -187,6 +188,7 @@ function connectToVideocallWs(room_id,user_id,videoroomHandle) {
                             updateParticipantPropertiesIcons(participant, jsdata.data.state, Actions.SOUND);
                         } else if (jsdata.data.message.demonstration !== undefined) {
                             updateParticipantPropertiesIcons(participant, jsdata.data.state, Actions.DEMONSTRATION);
+                            sndStartDemo.play().catch(err => console.warn('Autoplay block?', err));
                             if (userId_feedId.has(userId)) {
                                 if(jsdata.data.state !== defaultStates.ON &&activeFeeds.has(userId_feedId.get(userId))){
                                     activeFeeds.delete(userId_feedId.get(userId));

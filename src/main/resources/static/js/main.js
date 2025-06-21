@@ -1,6 +1,5 @@
 const csrfToken = document.querySelector('meta[name="_csrf"]').getAttribute('content');
 const csrfHeader = document.querySelector('meta[name="_csrf_header"]').getAttribute('content');
-const allSettingsType={SETCSS:'SETCSS'};
 
 class Pair{
     constructor(first, second) {
@@ -32,91 +31,6 @@ function DateTimeToFormat(dateortime){
     }else{
         return dateortime;
     }
-}
-
-function showSettingsAll(event){
-    event.stopPropagation();
-    event.preventDefault();
-    const settingsPanel=document.querySelector('.allsettings');
-    console.log(settingsPanel);
-    if(settingsPanel){
-        settingsPanel.style['display']=settingsPanel.style['display']==='none' ? '' : 'none';
-    }
-    document.addEventListener('click',(event)=>{
-        let visible=false;
-        for(let i in settingsPanel.children) {
-            if (i===event.target) {
-                visible = true;
-            }
-        }
-        settingsPanel.style.display = visible ? '' : 'none';
-    });
-}
-
-function addSettingsContainerListener(){
-    document.addEventListener("click", function(event) {
-        const settings = document.querySelector(".setting-container");
-        if (settings.style.display !== "none" && !settings.contains(event.target)) {
-            settings.style.display = "none";
-        }
-    });
-}
-
-function fillSettingsContainer(type){
-    const settingsContainer=document.querySelector('.setting-container');
-    settingsContainer.innerHTML='';
-    settingsContainer.style['display']='';
-    switch (type){
-        case allSettingsType.SETCSS:{
-            const textarea=document.createElement('textarea');
-            textarea.className='settings-setcss-area';
-            textarea.id='custom_css_text';
-            getCustomCssFromSv().then(data=>textarea.value=data);
-            const btn=document.createElement('button');
-            btn.type='button';
-            btn.className='allbuttons';
-            btn.style.marginTop='10px';
-            btn.setAttribute('onclick','sendCustomCssToSv()');
-            btn.innerText='Сохранить';
-            settingsContainer.appendChild(textarea);
-            settingsContainer.appendChild(btn);
-        break;}
-    }
-}
-
-function sendCustomCssToSv(){
-    const cssText=document.getElementById('custom_css_text').value;
-    const senddata={
-        text:cssText
-    };
-    fetch('/addUserCss',{
-        method:'post',
-        headers:{
-            [csrfHeader]: csrfToken,
-            'Content-Type':'application/json'
-        },
-        body:JSON.stringify(senddata)
-    }).then(response =>{
-        if(!response.ok){
-            showInfoMessage("Непредвиденная ошибка");
-        }else {
-            window.location.reload();
-        }
-    });
-}
-
-function getCustomCssFromSv(){
-    return fetch('/usercss',{
-        method:'get'
-    }).then(response =>{
-        if(!response.ok){
-            if(response.status!==404) {
-                showInfoMessage("Непредвиденная ошибка");
-            }
-            return "";
-        }
-        return response.text();
-    });
 }
 
 function showSettingsMenu(id){
