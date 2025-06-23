@@ -11,11 +11,14 @@ function getUserSettingsFromSv(){
             if(!response.ok) {
                 if (response.status !== 404) {
                     showInfoMessage("Непредвиденная ошибка");
-                    return;
                 }
+                return null;
             }
             return response.json();
         }).then(data =>{
+            if(data===null){
+                return;
+            }
             localStorage.setItem('userSettings',JSON.stringify(data));
         });
     }
