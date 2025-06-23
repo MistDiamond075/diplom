@@ -979,6 +979,7 @@ function publishOwnFeed(videoroomHandle) {
                 throw new Error();
             }
             keys.forEach(key => {
+                console.log(key);
                 document.addEventListener('keydown', (e) => {
                     console.log(parseKey(e),key);
                     if (parseKey(e) === key && sender && sender.track === null) {
