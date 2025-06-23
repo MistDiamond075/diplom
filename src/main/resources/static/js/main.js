@@ -111,7 +111,7 @@ function generateNameColor(bgcolor='#000000'){
     return getMatchedColorForColor(bgcolor);
 }
 
-function showInfoMessage(text){
+function showInfoMessage(text,isError=true){
     const messageContainer=document.querySelector('.info-messages');
     if(messageContainer) {
         messageContainer.style['display']='flex';
@@ -119,6 +119,7 @@ function showInfoMessage(text){
         if(span){
             span.innerText=text;
         }
+        messageContainer.style.background=isError ? '#c53636d1' : '#2ba535d1';
         setTimeout(() => {
             messageContainer.setAttribute('style', 'display:none');
             span.innerText='';

@@ -8,13 +8,24 @@ function getUserSettingsFromSv(){
         fetch('/usersettings',{
             method:'get'
         }).then(response =>{
-            if(!response.ok){
-                showInfoMessage("Непредвиденная ошибка");
-                return;
+            if(!response.ok) {
+                if (response.status !== 404) {
+                    showInfoMessage("Непредвиденная ошибка");
+                    return;
+                }
             }
-            localStorage.setItem('userSettings',JSON.stringify(response.json));
+            return response.json();
+        }).then(data =>{
+            localStorage.setItem('userSettings',JSON.stringify(data));
         });
     }
+}
+
+function parseKey(event){
+    const doubleKeys=['Alt','Shift','Control'];
+    const numpadKeys=['Numpad1','Numpad2','Numpad3','Numpad4','Numpad5','Numpad6','Numpad7','Numpad8','Numpad9','Numpad0','NumpadMinus','NumpadMultiply','NumpadDecimal',
+        'NumpadDivide', 'NumpadEnter'];
+    return (doubleKeys.includes(event.key) || numpadKeys.includes(event.code)) ? event.code : event.key;
 }
 
 function showSettingsAll(event){
@@ -80,7 +91,6 @@ function fillSettingsContainer(type){
             const pttKeysContainer=document.createElement('div');
             pttKeysContainer.className='settings-ptt-keys';
             const pttKeyInput=addPushToTalkKeyInput();
-            pttKeyInput.second.style.marginBottom='0px';
             const div2=document.createElement('div');
             div2.className='settings-ptt-keys-inputs';
             const pttKeysContainerInnerDiv=document.createElement('div');
@@ -93,7 +103,13 @@ function fillSettingsContainer(type){
             pttKeyInputAdd.className='settings-ptt-keys-add-input';
             pttKeyInputAdd.setAttribute('onclick','addPushToTalkKeyInput()');
             pttKeyInputAdd.innerText='+';
+            const pttKeyInputRemove=document.createElement('button');
+            pttKeyInputRemove.type='button';
+            pttKeyInputRemove.className='settings-ptt-keys-add-input';
+            pttKeyInputRemove.setAttribute('onclick','removePushToTalkKeyInput()');
+            pttKeyInputRemove.innerText='-';
             div2.appendChild(pttKeyInputAdd);
+            div2.appendChild(pttKeyInputRemove);
             pttKeysContainer.appendChild(div2);
             elementsToAdd.push(new Pair(undefined,pttKeysContainer));
             const fontSize=createLabeledElement('input','settings-input','settings_font_size','Размер шрифта');
@@ -112,6 +128,23 @@ function fillSettingsContainer(type){
             }
             elementsToAdd.push(themeSelector);
             header.innerText='Глобальные настройки';
+            if(localStorage.getItem('userSettings')){
+                const existedSettings=JSON.parse(localStorage.getItem('userSettings'));
+                voiceSelector.second.value=existedSettings.voiceMode;
+                usernameDisplaySelector.second.value=existedSettings.userDisplay;
+                if(existedSettings.keysPushToTalk.length>0) {
+                    pttKeyInput.second.value = existedSettings.keysPushToTalk[0];
+                    if(existedSettings.keysPushToTalk.length>1){
+                        const pttKeyInput2=addPushToTalkKeyInput();
+                        pttKeyInput2.second.style.marginBottom='0px';
+                        pttKeyInput2.second.value=existedSettings.keysPushToTalk[1];
+                        pttKeyInput2.second.id='settings_ptt_key_input_'+1;
+                        pttKeyInput2.first.setAttribute('for',pttKeyInput2.second.id);
+                        pttKeysContainerInnerDiv.appendChild(pttKeyInput2.first);
+                        pttKeysContainerInnerDiv.appendChild(pttKeyInput2.second);
+                    }
+                }
+            }
         break;}
     }
     settingsContainer.appendChild(header);
@@ -138,7 +171,7 @@ function createLabeledElement(type,className,id,name){
     element.className=className;
     element.id=id;
     const label=document.createElement('label');
-    label.for=id;
+    label.setAttribute('for',id);
     label.innerText=name;
     return new Pair(label,element);
 }
@@ -154,18 +187,37 @@ function addPushToTalkKeyInput(){
     pttKeyInput.second.type='text';
     pttKeyInput.second.setAttribute('readonly','true');
     pttKeyInput.second.title='Нажмите на это поле ввода и нажмите любую клавишу';
+    pttKeyInput.second.style.marginBottom='0px';
     if(count===0) {
         return pttKeyInput;
     }else{
         const inputsContainer=document.querySelector('.settings-ptt-keys');
         if(inputsContainer){
-            const pttKeysContainerInnerDiv=document.createElement('div');
-            pttKeysContainerInnerDiv.className='settings-ptt-keys-input-container';
+            let pttKeysContainerInnerDiv=document.querySelector('.settings-ptt-keys-input-container');
+            console.log(pttKeysContainerInnerDiv);
+            if(!pttKeysContainerInnerDiv) {
+                pttKeysContainerInnerDiv = document.createElement('div');
+                pttKeysContainerInnerDiv.className = 'settings-ptt-keys-input-container';
+                inputsContainer.appendChild(pttKeysContainerInnerDiv);
+            }
             pttKeysContainerInnerDiv.appendChild(pttKeyInput.first);
             pttKeysContainerInnerDiv.appendChild(pttKeyInput.second);
-            inputsContainer.appendChild(pttKeysContainerInnerDiv);
         }
         return null;
+    }
+}
+
+function removePushToTalkKeyInput(){
+    const inputs=document.querySelectorAll('[id*="settings_ptt_key_input"]');
+    if(inputs && inputs.length>1){
+        const input=inputs[inputs.length-1];
+        const id=input.id;
+        input.remove();
+        console.log(id);
+        const label=document.querySelector(`label[for=${id}]`);
+        if(label){
+            label.remove();
+        }
     }
 }
 
@@ -190,6 +242,36 @@ function sendCustomCssToSv(){
     });
 }
 
+function sendSettingsToSv(){
+    const voiceMode=document.getElementById('settings_voice_mode').value;
+    const pttKeysArray=document.querySelectorAll('[id*="settings_ptt_key_input"]');
+    const pttKeys=[];
+    pttKeysArray.forEach(key => pttKeys.push(key.value));
+    const userDisplayMode=document.getElementById('settings_user_display_mode').value;
+    const senddata={
+        voiceMode:voiceMode,
+        userDisplay:userDisplayMode,
+        keysPushToTalk:pttKeys
+    }
+    fetch('/addUserSettings',{
+        method:'post',
+        headers:{
+            [csrfHeader]: csrfToken,
+            'Content-Type':'application/json'
+        },
+        body:JSON.stringify(senddata)
+    }).then(response =>{
+        if(!response.ok){
+            showInfoMessage("Непредвиденная ошибка");
+        }else {
+            showInfoMessage("Изменения сохранены",false);
+            return response.json();
+        }
+    }).then(data =>{
+        localStorage.setItem('userSettings',JSON.stringify(data));
+    });
+}
+
 function getCustomCssFromSv(){
     return fetch('/usercss',{
         method:'get'
@@ -205,13 +287,10 @@ function getCustomCssFromSv(){
 }
 
 function addKeyRememberInputEventListener(input){
-    const doubleKeys=['Alt','Shift','Control'];
-    const numpadKeys=['Numpad1','Numpad2','Numpad3','Numpad4','Numpad5','Numpad6','Numpad7','Numpad8','Numpad9','Numpad0','NumpadMinus','NumpadMultiply','NumpadDecimal',
-        'NumpadDivide', 'NumpadEnter'];
     input.addEventListener('keydown', (event) => {
         event.preventDefault();
         console.log(event.code);
-        input.value =(doubleKeys.includes(event.key) || numpadKeys.includes(event.code)) ? event.code : event.key;
+        input.value =parseKey(event);
     });
 }
 

@@ -18,7 +18,12 @@ const feedId_userId=new Map();
 const Actions= {MICROPHONE: 'AUDIO', CAMERA:'VIDEO',BAN:'BAN',SOUND:'SOUND',DEMONSTRATION:'DEMONSTRATION'};
 const defaultStates={OFF:'OFF',ON:'ON',MUTED_BY_ADMIN:'MUTED_BY_ADMIN'};
 const iconsVideocallUrl='/files/icons/videocall';
-const sndStartDemo = new Audio('/files/sound/videocall/start.wav');
+const sounds={
+    DEMOSTART:new Audio('/files/sound/videocall/demo_start.wav'),
+    DEMOEND:new Audio('/files/sound/videocall/demo_end.wav'),
+    VOICESTART:new Audio('/files/sound/videocall/voice_start.wav'),
+    VOICEEND:new Audio('/files/sound/videocall/voice_end.wav'),
+};
 
 function isStringDefaultStates(str){
     return Object.values(defaultStates).includes(str);
@@ -188,7 +193,11 @@ function connectToVideocallWs(room_id,user_id,videoroomHandle) {
                             updateParticipantPropertiesIcons(participant, jsdata.data.state, Actions.SOUND);
                         } else if (jsdata.data.message.demonstration !== undefined) {
                             updateParticipantPropertiesIcons(participant, jsdata.data.state, Actions.DEMONSTRATION);
-                            sndStartDemo.play().catch(err => console.warn('Autoplay block?', err));
+                            if(jsdata.data.state === defaultStates.ON) {
+                                sounds.DEMOSTART.play().catch(err => console.warn('Autoplay block?', err));
+                            }else if(jsdata.data.state === defaultStates.OFF){
+                                sounds.DEMOEND.play().catch(err => console.warn('Autoplay block?', err));
+                            }
                             if (userId_feedId.has(userId)) {
                                 if(jsdata.data.state !== defaultStates.ON &&activeFeeds.has(userId_feedId.get(userId))){
                                     activeFeeds.delete(userId_feedId.get(userId));
@@ -911,7 +920,9 @@ function publishOwnFeed(videoroomHandle) {
                     localMediaStream = stream;
                     Janus.attachMediaStream(document.getElementById("video_display_own"), stream);
 
+                    let sender = null;
                     let audioLevel = 40;
+                    const audioTrack = stream.getAudioTracks()[0];
 
                     videoroomHandle.createOffer({
                         media: {
@@ -936,6 +947,16 @@ function publishOwnFeed(videoroomHandle) {
                                 message: publish,
                                 jsep: jsep
                             });
+
+                            setTimeout(() => {
+                                const pc = videoroomHandle.webrtcStuff.pc;
+                                sender = pc.getSenders().find(s => s.track && s.track.kind === 'audio');
+                                if (sender) {
+                                    if(setupPushToTalk(sender, audioTrack)){
+                                        sender.replaceTrack(null);
+                                    }
+                                }
+                            }, 500);
                         },
                         error: function (error) {
                             showInfoMessage("WebRTC createOffer error:");
@@ -947,24 +968,36 @@ function publishOwnFeed(videoroomHandle) {
             showInfoMessage("Ошибка доступа к медиа-устройствам");
         });
 
-    function preferCodec(sdp, codecName) {
-        const lines = sdp.split('\r\n');
-        const mLineIndex = lines.findIndex(line => line.startsWith('m=video'));
-        const codecLine = lines.find(line =>
-            line.toLowerCase().includes('rtpmap') &&
-            line.toLowerCase().includes(codecName.toLowerCase())
-        );
+    function setupPushToTalk(sender, track) {
+        try {
+            const settings = JSON.parse(localStorage.getItem('userSettings'));
+            if (settings.voiceMode !== settingVoiceDetection.PUSH_TO_TALK) {
+                return false;
+            }
+            const keys = Array.from(settings.keysPushToTalk);
+            if (keys.length === 0) {
+                throw new Error();
+            }
+            keys.forEach(key => {
+                document.addEventListener('keydown', (e) => {
+                    if (parseKey(e) === key && sender && sender.track === null) {
+                        sender.replaceTrack(track);
+                        sounds.VOICESTART.play();
+                    }
+                });
 
-        if (!codecLine) return sdp;
-
-        const payloadType = codecLine.match(/:(\d+) /)?.[1];
-        if (!payloadType) return sdp;
-
-        const mLine = lines[mLineIndex].split(' ');
-        const header = mLine.slice(0, 3);
-        const payloads = mLine.slice(3).filter(p => p !== payloadType);
-        lines[mLineIndex] = [...header, payloadType, ...payloads].join(' ');
-        return lines.join('\r\n');
+                document.addEventListener('keyup', (e) => {
+                    if (parseKey(e) === key && sender && sender.track) {
+                        sender.replaceTrack(null);
+                        sounds.VOICEEND.play();
+                    }
+                });
+            });
+        } catch (e) {
+            showInfoMessage("Не заданы клавиши режима рации");
+            return false;
+        }
+        return true;
     }
 }
 

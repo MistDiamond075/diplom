@@ -3,24 +3,24 @@ package com.diplom.diplom.dto;
 public class DTOUserSettings {
     public enum voiceModes{VOICE,PUSH_TO_TALK}
     public enum userDisplayModes{USERNAME,FULLNAME}
-    public char[] keysPushToTalk=new char[2];
+    public String[] keysPushToTalk=new String[2];
     public voiceModes voiceMode;
     public userDisplayModes userDisplay;
 
     public DTOUserSettings() {
     }
 
-    public DTOUserSettings(char[] keysPushToTalk, voiceModes voiceMode, userDisplayModes userDisplay) {
+    public DTOUserSettings(String[] keysPushToTalk, voiceModes voiceMode, userDisplayModes userDisplay) {
         this.keysPushToTalk = keysPushToTalk;
         this.voiceMode = voiceMode;
         this.userDisplay = userDisplay;
     }
 
-    public char[] getKeysPushToTalk() {
+    public String[] getKeysPushToTalk() {
         return keysPushToTalk;
     }
 
-    public void setKeysPushToTalk(char[] keysPushToTalk) {
+    public void setKeysPushToTalk(String[] keysPushToTalk) {
         this.keysPushToTalk = keysPushToTalk;
     }
 
