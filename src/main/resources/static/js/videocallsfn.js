@@ -1242,6 +1242,7 @@ function ScreenSharing(videoroomHandle,start) {
 }
 
 function replaceDisplayStreams(promise,videoroomHandle,camera){
+    console.warn(getCallerFunctionName(),camera);
     promise.then(stream => {
         const screenTrack = stream.getVideoTracks()[0];
         const senders = videoroomHandle.webrtcStuff.pc.getSenders();
@@ -1365,6 +1366,7 @@ function updateSoundState(newstate=null){
 }
 
 function updateDemonstrationState(){
+    console.warn(getCallerFunctionName());
     try{
         updateUserSettings(null,Actions.DEMONSTRATION,true)
     }catch (e) {
