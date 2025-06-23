@@ -971,8 +971,15 @@ function publishOwnFeed(videoroomHandle) {
     function setupPushToTalk(sender, track) {
         try {
             const settings = JSON.parse(localStorage.getItem('userSettings'));
-            if (settings.voiceMode !== settingVoiceDetection.PUSH_TO_TALK) {
-                return false;
+            const k=Object.keys(settingVoiceDetection);
+            let isEnabled=false;
+            k.forEach(key=> {
+                if (settings.voiceMode === key && !isEnabled){
+                    isEnabled=true;
+                }
+            });
+            if(!isEnabled){
+                return isEnabled;
             }
             const keys = Array.from(settings.keysPushToTalk);
             if (keys.length === 0) {
