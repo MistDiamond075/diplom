@@ -980,6 +980,7 @@ function publishOwnFeed(videoroomHandle) {
             }
             keys.forEach(key => {
                 document.addEventListener('keydown', (e) => {
+                    console.log(parseKey(e),key);
                     if (parseKey(e) === key && sender && sender.track === null) {
                         sender.replaceTrack(track);
                         sounds.VOICESTART.play();
@@ -987,6 +988,7 @@ function publishOwnFeed(videoroomHandle) {
                 });
 
                 document.addEventListener('keyup', (e) => {
+                    console.log(parseKey(e),key);
                     if (parseKey(e) === key && sender && sender.track) {
                         sender.replaceTrack(null);
                         sounds.VOICEEND.play();
