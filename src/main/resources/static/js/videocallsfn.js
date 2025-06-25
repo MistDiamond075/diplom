@@ -911,7 +911,7 @@ function connectToKeyloggerWebsocket(keys,sender,track){
 
     function connect() {
         const settings=localStorage.getItem('userSettings');
-        const port= (settings!==undefined && settings.pttPort!=='') ? settings.pttPort : '60602';
+        const port= (settings!==undefined && settings.portPushToTalk!=='') ? settings.portPushToTalk : '60602';
         localWs=new WebSocket('ws://localhost:'+port);
         localWs.onopen = function (event) {
             const senddata = {
