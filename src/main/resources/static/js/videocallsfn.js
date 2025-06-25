@@ -1369,7 +1369,7 @@ function replaceDisplayStreams(promise,videoroomHandle,camera){
         });
 
     function getAllDemonstrators(){
-        const users=document.querySelectorAll('[class*="user-participant"]');
+        const users=document.querySelectorAll('[class="user-participant"]');
         let count=0;
         users.forEach(user=> {
             const setting=getParticipantSettingState(user,'demo');
