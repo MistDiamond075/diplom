@@ -1324,6 +1324,7 @@ function replaceDisplayStreams(promise,videoroomHandle,camera){
                     }
                 });
             }).catch(err => {
+                console.error(start,err);
                 showInfoMessage("Не удалось переключиться");
                 updateDemonstrationState();
                // ScreenSharing(videoroomHandle,false);
@@ -1361,6 +1362,7 @@ function replaceDisplayStreams(promise,videoroomHandle,camera){
         }*/
     })
         .catch(err => {
+            console.error(start,err);
             showInfoMessage("Ошибка при получении экрана");
             updateDemonstrationState();
            // ScreenSharing(videoroomHandle,false);
