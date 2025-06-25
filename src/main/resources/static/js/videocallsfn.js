@@ -24,6 +24,8 @@ const sounds={
     DEMOEND:new Audio('/files/sound/videocall/demo_end.wav'),
     VOICESTART:new Audio('/files/sound/videocall/voice_start.wav'),
     VOICEEND:new Audio('/files/sound/videocall/voice_end.wav'),
+    JOIN:new Audio('/files/sound/videocall/join.wav'),
+    LEAVE:new Audio('/files/sound/videocall/leave.wav')
 };
 
 function isStringDefaultStates(str){
@@ -77,6 +79,7 @@ function connectToVideocallWs(room_id,user_id,videoroomHandle) {
                 messages.forEach(msg => {
                     addMessageToChat(msg, user_id);
                 });
+                sounds.JOIN.play();
             } else if (jsdata.event === "disconnected") {
                 if (jsdata.forced) {
                     leave(true);
@@ -90,6 +93,7 @@ function connectToVideocallWs(room_id,user_id,videoroomHandle) {
                 if (element) {
                     element.remove();
                 }
+                sounds.LEAVE.play();
             } else if (jsdata.event === "chatmsg") {
                 addMessageToChat(jsdata, user_id);
             } else if (jsdata.event === "configure") {
