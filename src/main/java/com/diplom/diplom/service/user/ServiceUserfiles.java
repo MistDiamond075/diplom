@@ -186,8 +186,11 @@ public class ServiceUserfiles {
         EntUser user= userDetails.getUser();
         File jsonFile = Paths.get(apppaths.getUserfilesfolder(), "settings_"+user.getId()+ ".json").toFile();
         objectMapper.writerWithDefaultPrettyPrinter().writeValue(jsonFile, dtoSettings);
-        EntUserfiles file=rUserfiles.findByFilesuserIdAndType(user, EntUserfiles.fileType.SETTINGS).orElse(new EntUserfiles(null,jsonFile.getPath(),user,EntUserfiles.fileType.SETTINGS));
-        rUserfiles.save(file);
+        Optional<EntUserfiles> file=rUserfiles.findByFilesuserIdAndType(user, EntUserfiles.fileType.SETTINGS);
+        if(file.isEmpty()) {
+            EntUserfiles newfile =new EntUserfiles(null, jsonFile.getPath(), user, EntUserfiles.fileType.SETTINGS);
+            rUserfiles.save(newfile);
+        }
         return dtoSettings;
     }
 

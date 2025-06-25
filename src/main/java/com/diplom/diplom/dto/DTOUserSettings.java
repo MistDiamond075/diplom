@@ -4,16 +4,18 @@ public class DTOUserSettings {
     public enum voiceModes{VOICE,PUSH_TO_TALK}
     public enum userDisplayModes{USERNAME,FULLNAME}
     public String[] keysPushToTalk=new String[2];
+    public String portPushToTalk;
     public voiceModes voiceMode;
     public userDisplayModes userDisplay;
 
     public DTOUserSettings() {
     }
 
-    public DTOUserSettings(String[] keysPushToTalk, voiceModes voiceMode, userDisplayModes userDisplay) {
+    public DTOUserSettings(String[] keysPushToTalk, voiceModes voiceMode, userDisplayModes userDisplay, String portPushToTalk) {
         this.keysPushToTalk = keysPushToTalk;
         this.voiceMode = voiceMode;
         this.userDisplay = userDisplay;
+        this.portPushToTalk = portPushToTalk;
     }
 
     public String[] getKeysPushToTalk() {
@@ -22,6 +24,14 @@ public class DTOUserSettings {
 
     public void setKeysPushToTalk(String[] keysPushToTalk) {
         this.keysPushToTalk = keysPushToTalk;
+    }
+
+    public String getPortPushToTalk() {
+        return portPushToTalk;
+    }
+
+    public void setPortPushToTalk(String portPushToTalk) {
+        this.portPushToTalk = portPushToTalk;
     }
 
     public voiceModes getVoiceMode() {

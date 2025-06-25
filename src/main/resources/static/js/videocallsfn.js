@@ -8,6 +8,7 @@ let localMediaStream=null;
 let devices_start_state_updated=false;
 let isDemonstrationActive=false;
 let ws;
+let wsKeylogger=null;
 let window_count=0;
 let contentwindow_aspectratio=new Map();
 const timeoutFeeds=new Map();
@@ -899,6 +900,64 @@ function createDialogWindow() {
     });
 }
 
+function connectToKeyloggerWebsocket(keys,sender,track){
+    let reconnectDelay = 2000;
+    let localWs;
+    let isManuallyClosed = false;
+
+    function connect() {
+        const settings=localStorage.getItem('userSettings');
+        const port= (settings!==undefined && settings.pttPort!=='') ? settings.pttPort : '60602';
+        localWs=new WebSocket('ws://localhost:'+port);
+        localWs.onopen = function (event) {
+            const senddata = {
+                event: 'connected',
+                keys: keys
+            };
+            localWs.send(JSON.stringify(senddata));
+            reconnectDelay=2000;
+        }
+
+        localWs.onmessage = function (event) {
+            const jsdata = JSON.parse(event.data);
+            if (jsdata.event === 'ping') {
+                const resp = {event: 'pong'};
+                localWs.send(JSON.stringify(resp));
+            } else if (jsdata.event === 'pressed') {
+                sender.replaceTrack(track);
+                sounds.VOICESTART.play();
+            } else if (jsdata.event === 'released') {
+                sender.replaceTrack(null);
+                sounds.VOICEEND.play();
+            }else if(jsdata.event==='shutdown'){
+                localWs.close();
+            }
+        }
+
+        localWs.onclose = (e) => {
+            if (!isManuallyClosed) {
+                setTimeout(connect, reconnectDelay);
+                reconnectDelay+=1500;
+                if(reconnectDelay>10000){
+                    isManuallyClosed=true;
+                    reconnectDelay=2000;
+                }
+            }
+        };
+
+        localWs.onerror = (e) => console.error("WebSocket error:", e);
+    }
+
+    connect();
+
+    return {
+        disconnect: ()=>{
+            isManuallyClosed=true;
+            localWs.close();
+        }
+    }
+}
+
 function publishOwnFeed(videoroomHandle) {
     navigator.mediaDevices.enumerateDevices()
         .then(function (devices) {
@@ -952,7 +1011,7 @@ function publishOwnFeed(videoroomHandle) {
                                 const pc = videoroomHandle.webrtcStuff.pc;
                                 sender = pc.getSenders().find(s => s.track && s.track.kind === 'audio');
                                 if (sender) {
-                                    if(setupPushToTalk(sender, audioTrack)){
+                                    if (setupPushToTalk(sender, audioTrack)) {
                                         sender.replaceTrack(null);
                                     }
                                 }
@@ -971,38 +1030,21 @@ function publishOwnFeed(videoroomHandle) {
     function setupPushToTalk(sender, track) {
         try {
             const settings = JSON.parse(localStorage.getItem('userSettings'));
-            const k=Object.keys(settingVoiceDetection);
-            let isEnabled=false;
-            k.forEach(key=> {
-                if (settings.voiceMode === key && !isEnabled){
-                    isEnabled=true;
+            const k = Object.keys(settingVoiceDetection);
+            let isEnabled = false;
+            k.forEach(key => {
+                if (settings.voiceMode === key && !isEnabled) {
+                    isEnabled = true;
                 }
             });
-            if(!isEnabled){
+            if (!isEnabled) {
                 return isEnabled;
             }
             const keys = Array.from(settings.keysPushToTalk);
             if (keys.length === 0) {
                 throw new Error();
             }
-            keys.forEach(key => {
-                console.log(key);
-                document.addEventListener('keydown', (e) => {
-                    console.log(parseKey(e),key);
-                    if (parseKey(e) === key && sender && sender.track === null) {
-                        sender.replaceTrack(track);
-                        sounds.VOICESTART.play();
-                    }
-                });
-
-                document.addEventListener('keyup', (e) => {
-                    console.log(parseKey(e),key);
-                    if (parseKey(e) === key && sender && sender.track) {
-                        sender.replaceTrack(null);
-                        sounds.VOICEEND.play();
-                    }
-                });
-            });
+            wsKeylogger=connectToKeyloggerWebsocket(keys,sender,track);
         } catch (e) {
             showInfoMessage("Не заданы клавиши режима рации");
             return false;
@@ -1756,6 +1798,9 @@ function leave(withRequest=true){
     }
     if (localMediaStream) {
         localMediaStream.getTracks().forEach(track => track.stop());
+    }
+    if(wsKeylogger!==null){
+        wsKeylogger.disconnect();
     }
     const id=document.getElementById('videocall_id').value;
     if(withRequest) {

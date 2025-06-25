@@ -25,10 +25,11 @@ function getUserSettingsFromSv(){
 }
 
 function parseKey(event){
-    const doubleKeys=['Alt','Shift','Control'];
+    /*const doubleKeys=['Alt','Shift','Control'];
     const numpadKeys=['Numpad1','Numpad2','Numpad3','Numpad4','Numpad5','Numpad6','Numpad7','Numpad8','Numpad9','Numpad0','NumpadMinus','NumpadMultiply','NumpadDecimal',
         'NumpadDivide', 'NumpadEnter'];
-    return (doubleKeys.includes(event.key) || numpadKeys.includes(event.code)) ? event.code : event.key;
+    return (doubleKeys.includes(event.key) || numpadKeys.includes(event.code)) ? event.code : event.key;*/
+    return event.key;
 }
 
 function showSettingsAll(event){
@@ -120,6 +121,11 @@ function fillSettingsContainer(type){
             fontSize.second.min=0;
             fontSize.second.max=120;
             elementsToAdd.push(fontSize);
+            const pttPort=createLabeledElement('input','settings-input','settings_ptt_port','Порт Push-To-Talk');
+            pttPort.second.type='number';
+            pttPort.second.setAttribute('min','0');
+            pttPort.first.innerHTML=pttPort.first.innerText+'<br><span style="color: #a9a9a9;font-family: monospace">(Оставить пустым, если не изменялся)</span>';
+            elementsToAdd.push(pttPort);
             const usernameDisplaySelector=createLabeledElement('select','settings-selector','settings_user_display_mode','Отображение пользователей');
             for(let i in Object.entries(settingUsernameDisplay)) {
                 createOptionForSelector(usernameDisplaySelector.second, Object.entries(settingUsernameDisplay)[i]);
@@ -135,6 +141,7 @@ function fillSettingsContainer(type){
                 const existedSettings=JSON.parse(localStorage.getItem('userSettings'));
                 voiceSelector.second.value=existedSettings.voiceMode;
                 usernameDisplaySelector.second.value=existedSettings.userDisplay;
+                pttPort.second.value=existedSettings.pttPort;
                 if(existedSettings.keysPushToTalk.length>0) {
                     pttKeyInput.second.value = existedSettings.keysPushToTalk[0];
                     if(existedSettings.keysPushToTalk.length>1){
@@ -251,10 +258,12 @@ function sendSettingsToSv(){
     const pttKeys=[];
     pttKeysArray.forEach(key => pttKeys.push(key.value));
     const userDisplayMode=document.getElementById('settings_user_display_mode').value;
+    const pttPort=document.getElementById('settings_ptt_port').value;
     const senddata={
         voiceMode:voiceMode,
         userDisplay:userDisplayMode,
-        keysPushToTalk:pttKeys
+        keysPushToTalk:pttKeys,
+        portPushToTalk:pttPort
     }
     fetch('/addUserSettings',{
         method:'post',
