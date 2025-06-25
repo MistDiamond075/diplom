@@ -939,13 +939,12 @@ function connectToKeyloggerWebsocket(keys,sender,track,user_id){
                 localWs.send(JSON.stringify(resp));
             } else if (jsdata.event === 'pressed') {
                 sender.replaceTrack(track);
-                console.log(user_id,user);
-                if(parseDefaultStateFromString(getParticipantSettingState(user,'demo'))===defaultStates.ON) {
+                if(parseDefaultStateFromString(getParticipantSettingState(user,'mic'))===defaultStates.ON) {
                     sounds.VOICESTART.play();
                 }
             } else if (jsdata.event === 'released') {
                 sender.replaceTrack(null);
-                if(parseDefaultStateFromString(getParticipantSettingState(user,'demo'))===defaultStates.ON) {
+                if(parseDefaultStateFromString(getParticipantSettingState(user,'mic'))===defaultStates.ON) {
                     sounds.VOICEEND.play();
                 }
             }else if(jsdata.event==='shutdown'){
