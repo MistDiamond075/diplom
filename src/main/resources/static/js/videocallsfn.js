@@ -1051,6 +1051,7 @@ function publishOwnFeed(videoroomHandle) {
             wsKeylogger=connectToKeyloggerWebsocket(keys,sender,track);
         } catch (e) {
             showInfoMessage("Не заданы клавиши режима рации");
+            console.log(e);
             return false;
         }
         return true;
