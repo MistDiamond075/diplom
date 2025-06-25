@@ -28,6 +28,9 @@ const sounds={
     LEAVE:new Audio('/files/sound/videocall/leave.wav')
 };
 
+sounds.JOIN.volume=0.2;
+sounds.JOIN.playbackRate=1.3;
+
 function isStringDefaultStates(str){
     return Object.values(defaultStates).includes(str);
 }
@@ -910,7 +913,7 @@ function connectToKeyloggerWebsocket(keys,sender,track){
     let isManuallyClosed = false;
 
     function connect() {
-        const settings=localStorage.getItem('userSettings');
+        const settings=JSON.parse(localStorage.getItem('userSettings'));
         const port= (settings!==undefined && settings.portPushToTalk!=='') ? settings.portPushToTalk : '60602';
         localWs=new WebSocket('ws://localhost:'+port);
         localWs.onopen = function (event) {
