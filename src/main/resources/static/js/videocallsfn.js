@@ -1045,7 +1045,7 @@ function publishOwnFeed(videoroomHandle,user_id) {
             showInfoMessage("Ошибка доступа к медиа-устройствам");
         });
 
-    function setupPushToTalk(sender, track,user_id {
+    function setupPushToTalk(sender, track,user_id ){
         try {
             const settings = JSON.parse(localStorage.getItem('userSettings'));
             const k = Object.keys(settingVoiceDetection);
