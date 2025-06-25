@@ -718,7 +718,10 @@ function startJanus(roomId, username, opaqueId, serverUrl,microstate=defaultStat
                             }
                         }
                         activeFeeds.add(talkingFeedId);
-                        toggleVideo(talkingFeedId,true);
+                        const userId=feedId_userId.get(talkingFeedId);
+                        if(parseDefaultStateFromString(getParticipantSettingState('user_'+userId,'cam'))===defaultStates.ON) {
+                            toggleVideo(talkingFeedId, true);
+                        }
                         if (timeoutFeeds.has(talkingFeedId)) {
                             clearTimeout(timeoutFeeds.get(talkingFeedId).entries().next().value[0]);
                             timeoutFeeds.delete(talkingFeedId);
@@ -737,7 +740,10 @@ function startJanus(roomId, username, opaqueId, serverUrl,microstate=defaultStat
                                 console.log('UNSUBBED');
                                 const timeout = setTimeout(() => {
                                     console.log('TIMEOUT');
-                                    toggleVideo(feedId, false);
+                                    const userId=feedId_userId.get(feedId);
+                                    if(parseDefaultStateFromString(getParticipantSettingState('user_'+userId,'cam'))===defaultStates.ON) {
+                                        toggleVideo(feedId, false);
+                                    }
                                     timeoutFeeds.delete(feedId);
                                 }, 5000);
 
@@ -1320,7 +1326,7 @@ function replaceDisplayStreams(promise,videoroomHandle,camera){
             }).catch(err => {
                 showInfoMessage("Не удалось переключиться");
                 updateDemonstrationState();
-                ScreenSharing(videoroomHandle,false);
+               // ScreenSharing(videoroomHandle,false);
             });
             const settings = screenTrack.getSettings();
             console.log(`🎥 Actual FPS: ${settings.frameRate}, resolution: ${settings.width}x${settings.height}`);
@@ -1357,7 +1363,7 @@ function replaceDisplayStreams(promise,videoroomHandle,camera){
         .catch(err => {
             showInfoMessage("Ошибка при получении экрана");
             updateDemonstrationState();
-            ScreenSharing(videoroomHandle,false);
+           // ScreenSharing(videoroomHandle,false);
         });
 
     function getAllDemonstrators(){
