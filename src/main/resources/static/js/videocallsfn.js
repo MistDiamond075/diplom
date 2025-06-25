@@ -676,7 +676,7 @@ function startJanus(roomId, username, opaqueId, serverUrl,microstate=defaultStat
                             }*/
 
                             if (publishers.length === 0) {
-                                publishOwnFeed(videoroomHandle);
+                                publishOwnFeed(videoroomHandle,user_id);
                             } else {
                                 for (let i = 0; i < publishers.length; i++) {
                                     const publisher = publishers[i];
@@ -913,10 +913,11 @@ function createDialogWindow() {
     });
 }
 
-function connectToKeyloggerWebsocket(keys,sender,track){
+function connectToKeyloggerWebsocket(keys,sender,track,user_id){
     let reconnectDelay = 2000;
     let localWs;
     let isManuallyClosed = false;
+    const user=document.getElementById('user_'+user_id);
 
     function connect() {
         const settings=JSON.parse(localStorage.getItem('userSettings'));
@@ -938,10 +939,14 @@ function connectToKeyloggerWebsocket(keys,sender,track){
                 localWs.send(JSON.stringify(resp));
             } else if (jsdata.event === 'pressed') {
                 sender.replaceTrack(track);
-                sounds.VOICESTART.play();
+                if(parseDefaultStateFromString(getParticipantSettingState(user,'demo'))===defaultStates.ON) {
+                    sounds.VOICESTART.play();
+                }
             } else if (jsdata.event === 'released') {
                 sender.replaceTrack(null);
-                sounds.VOICEEND.play();
+                if(parseDefaultStateFromString(getParticipantSettingState(user,'demo'))===defaultStates.ON) {
+                    sounds.VOICEEND.play();
+                }
             }else if(jsdata.event==='shutdown'){
                 localWs.close();
             }
@@ -971,7 +976,7 @@ function connectToKeyloggerWebsocket(keys,sender,track){
     }
 }
 
-function publishOwnFeed(videoroomHandle) {
+function publishOwnFeed(videoroomHandle,user_id) {
     navigator.mediaDevices.enumerateDevices()
         .then(function (devices) {
             const hasAudio = devices.some(device => device.kind === 'audioinput');
@@ -1024,7 +1029,7 @@ function publishOwnFeed(videoroomHandle) {
                                 const pc = videoroomHandle.webrtcStuff.pc;
                                 sender = pc.getSenders().find(s => s.track && s.track.kind === 'audio');
                                 if (sender) {
-                                    if (setupPushToTalk(sender, audioTrack)) {
+                                    if (setupPushToTalk(sender, audioTrack,user_id)) {
                                         sender.replaceTrack(null);
                                     }
                                 }
@@ -1040,7 +1045,7 @@ function publishOwnFeed(videoroomHandle) {
             showInfoMessage("Ошибка доступа к медиа-устройствам");
         });
 
-    function setupPushToTalk(sender, track) {
+    function setupPushToTalk(sender, track,user_id {
         try {
             const settings = JSON.parse(localStorage.getItem('userSettings'));
             const k = Object.keys(settingVoiceDetection);
@@ -1057,7 +1062,7 @@ function publishOwnFeed(videoroomHandle) {
             if (keys.length === 0) {
                 throw new Error();
             }
-            wsKeylogger=connectToKeyloggerWebsocket(keys,sender,track);
+            wsKeylogger=connectToKeyloggerWebsocket(keys,sender,track,user_id);
         } catch (e) {
             showInfoMessage("Не заданы клавиши режима рации");
             console.log(e);
