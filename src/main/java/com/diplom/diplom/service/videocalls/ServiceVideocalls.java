@@ -180,6 +180,9 @@ public class ServiceVideocalls {
             +" where he was banned in videocall","Пользователь не подключен к видеоконференции",userDetails);
         }
         videocallhasuser.setConnected(false);
+        if(videocallhasuser.getDemostate()== EntVideocallsHasUser.defaultStates.ON) {
+            videocallhasuser.setDemostate(EntVideocallsHasUser.defaultStates.OFF);
+        }
         rVideocallsHasUser.save(videocallhasuser);
         int participans=activecall.getParticipants()-1;
         activecall.setParticipants(participans);

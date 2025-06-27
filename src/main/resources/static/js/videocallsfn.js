@@ -953,7 +953,7 @@ function connectToKeyloggerWebsocket(keys,sender,track,user_id){
         }
 
         localWs.onclose = (e) => {
-            if(localWs.readyState === WebSocket.CLOSED){
+            if(localWs.readyState === WebSocket.CLOSED && !isLeaving){
                 showInfoMessage("Нет соединения с Push-To-Talk utility");
                 window.location.href='pttutility://launch'+(port!=='' ? '?'+new URLSearchParams({port:port})  : '');
             }else if (!isManuallyClosed) {
