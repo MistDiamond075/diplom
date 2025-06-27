@@ -953,7 +953,10 @@ function connectToKeyloggerWebsocket(keys,sender,track,user_id){
         }
 
         localWs.onclose = (e) => {
-            if (!isManuallyClosed) {
+            if(localWs.readyState === WebSocket.CLOSED){
+                showInfoMessage("Нет соединения с Push-To-Talk utility");
+                window.location.href='pttutility://launch'+(port!=='' ? '?'+new URLSearchParams({port:port})  : '');
+            }else if (!isManuallyClosed) {
                 setTimeout(connect, reconnectDelay);
                 reconnectDelay+=1500;
                 if(reconnectDelay>10000){
@@ -1062,9 +1065,8 @@ function publishOwnFeed(videoroomHandle,user_id) {
             if (keys.length === 0) {
                 throw new Error();
             }
-            wsKeylogger=connectToKeyloggerWebsocket(keys,sender,track,user_id);
             const port=settings.portPushToTalk;
-            window.location.href='pttutility://launch'+(port!=='' ? '?'+new URLSearchParams({port:port})  : '');
+            wsKeylogger=connectToKeyloggerWebsocket(keys,sender,track,user_id);
         } catch (e) {
             showInfoMessage("Не заданы клавиши режима рации");
             console.log(e);
