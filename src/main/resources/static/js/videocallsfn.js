@@ -1063,6 +1063,8 @@ function publishOwnFeed(videoroomHandle,user_id) {
                 throw new Error();
             }
             wsKeylogger=connectToKeyloggerWebsocket(keys,sender,track,user_id);
+            const port=settings.portPushToTalk;
+            window.location.href='pttutility://launch'+(port!=='' ? '?'+new URLSearchParams({port:port})  : '');
         } catch (e) {
             showInfoMessage("Не заданы клавиши режима рации");
             console.log(e);
