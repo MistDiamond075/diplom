@@ -1859,7 +1859,7 @@ function setSoundsVolume(){
     if(settingsRaw){
         const settings=JSON.parse(settingsRaw);
         if(settings.soundsVolume){
-            Object.values(sounds).forEach(snd => snd.volume=settings.soundsVolume);
+            Object.values(sounds).forEach(snd => snd.volume=settings.soundsVolume/100);
         }
     }
 }
