@@ -9,6 +9,7 @@ import com.diplom.diplom.dto.converter.ConverterFileToEntityFile;
 import com.diplom.diplom.entity.EntUser;
 import com.diplom.diplom.entity.EntUserfiles;
 import com.diplom.diplom.exception.AccessException;
+import com.diplom.diplom.exception.DataProcessingException;
 import com.diplom.diplom.exception.EntityException;
 import com.diplom.diplom.misc.utils.Checker;
 import com.diplom.diplom.misc.utils.FilesProcessor;
@@ -110,7 +111,7 @@ public class ServiceUserfiles {
         return response.getStatusCode()!=HttpStatus.NOT_FOUND ? response : ResponseEntity.ok(new ByteArrayResource("".getBytes()));
     }
 
-    public DTOUserSettings getUserSettings(DiplomUserDetails userDetails) throws EntityException, AccessException, JsonProcessingException {
+    public DTOUserSettings getUserSettings(DiplomUserDetails userDetails) throws EntityException, AccessException, DataProcessingException {
         if(userDetails==null){
             throw new AccessException(
                     HttpStatus.UNAUTHORIZED,
@@ -126,7 +127,16 @@ public class ServiceUserfiles {
                 "Настройки не найдены",
                 EntUserfiles.class
         ));
-        return objectMapper.readValue(file.getPath(),DTOUserSettings.class);
+        File jsonFile = new File(file.getPath());
+        try {
+            return objectMapper.readValue(jsonFile,DTOUserSettings.class);
+        } catch (IOException e) {
+            throw new DataProcessingException(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "an error occurred when reading settings from "+file.getPath(),
+                    "Ошибка получения настроек"
+            );
+        }
     }
 
     @Transactional

@@ -28,7 +28,6 @@ const sounds={
     LEAVE:new Audio('/files/sound/videocall/leave.wav')
 };
 
-sounds.JOIN.volume=0.2;
 sounds.JOIN.playbackRate=1.3;
 
 function isStringDefaultStates(str){
@@ -954,8 +953,10 @@ function connectToKeyloggerWebsocket(keys,sender,track,user_id){
 
         localWs.onclose = (e) => {
             if(localWs.readyState === WebSocket.CLOSED && !isLeaving){
-                showInfoMessage("Нет соединения с Push-To-Talk utility");
-                window.location.href='pttutility://launch'+(port!=='' ? '?'+new URLSearchParams({port:port})  : '');
+                const iframe = document.createElement('iframe');
+                iframe.style.display = 'none';
+                iframe.src = 'pttutility://launch' + (port ? '?' + new URLSearchParams({ port }) : '');
+                document.body.appendChild(iframe);
             }else if (!isManuallyClosed) {
                 setTimeout(connect, reconnectDelay);
                 reconnectDelay+=1500;
@@ -1853,6 +1854,16 @@ function addScrollEventListenerToRemoteVideosContainer(){
     }, { passive: false });
 }
 
+function setSoundsVolume(){
+    const settingsRaw=localStorage.getItem('userSettings');
+    if(settingsRaw){
+        const settings=JSON.parse(settingsRaw);
+        if(settings.soundsVolume){
+            Object.values(sounds).forEach(snd => snd.volume=settings.soundsVolume);
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded',function (){
     join();
     addScrollEventListenerToRemoteVideosContainer();
@@ -1870,6 +1881,7 @@ document.addEventListener('DOMContentLoaded',function (){
         }
     });
     addMessageInputEventListener();
+    setSoundsVolume();
 },false);
 
 window.addEventListener("beforeunload", () => {
@@ -1887,23 +1899,3 @@ window.addEventListener("beforeunload", () => {
     });
     navigator.sendBeacon(window.location.href+"/leave?"+new URLSearchParams({reason:'RELOAD'}),data);
 });
-
-/*const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-   const source = audioContext.createMediaStreamSource(stream);
-
-   const analyser = audioContext.createAnalyser();
-   analyser.fftSize = 256;
-   const bufferLength = analyser.frequencyBinCount;
-   const dataArray = new Uint8Array(bufferLength);
-
-   source.connect(analyser);
-
-// Функция для проверки громкости
-   function checkVolume() {
-       analyser.getByteFrequencyData(dataArray);
-       const average = dataArray.reduce((a, b) => a + b) / bufferLength;
-       console.log("Mic volume (0-255):", average.toFixed(2));
-       requestAnimationFrame(checkVolume);
-   }
-
-   checkVolume();*/

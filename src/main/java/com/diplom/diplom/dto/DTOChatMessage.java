@@ -1,6 +1,7 @@
 package com.diplom.diplom.dto;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 public class DTOChatMessage {
     private Long id;
@@ -9,8 +10,19 @@ public class DTOChatMessage {
     private Long chatId;
     private DTOUserUpdate userId;
     private Long replyTo;
+    private List<DTOFile> files;
 
     public DTOChatMessage() {
+    }
+
+    public DTOChatMessage(Long id, String text, LocalDateTime date, Long chatId, DTOUserUpdate userId, Long replyTo, List<DTOFile> files) {
+        this.id = id;
+        this.text = text;
+        this.date = date;
+        this.chatId = chatId;
+        this.userId = userId;
+        this.replyTo = replyTo;
+        this.files = files;
     }
 
     public DTOChatMessage(Long id, String text, LocalDateTime date, Long chatId, DTOUserUpdate userId, Long replyTo) {
@@ -68,5 +80,13 @@ public class DTOChatMessage {
 
     public void setReplyTo(Long replyTo) {
         this.replyTo = replyTo;
+    }
+
+    public List<DTOFile> getFiles() {
+        return files;
+    }
+
+    public void setFiles(List<DTOFile> files) {
+        this.files = files;
     }
 }

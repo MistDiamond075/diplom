@@ -12,6 +12,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -25,8 +26,8 @@ public class ServiceChatMessageAsync {
         this.srvChatMessage = srvChatMessage;
     }
 
-    public CompletableFuture< ResponseEntity<?>>addMessageToChat(Long chatId, Long replyId, EntChatMessage msg, UserDetails userDetails) throws AccessException, EntityException {
-        DTOChatMessage dtoChatMessage = srvChatMessage.addMessageToChat(chatId,replyId,msg,userDetails);
+    public CompletableFuture< ResponseEntity<?>>addMessageToChat(Long chatId, Long replyId, EntChatMessage msg, MultipartFile[] files, UserDetails userDetails) throws AccessException, EntityException {
+        DTOChatMessage dtoChatMessage = srvChatMessage.addMessageToChat(chatId,replyId,msg,files,userDetails);
         return CompletableFuture.supplyAsync(() -> {
             sendMessage(dtoChatMessage);
             return ResponseEntity.ok(dtoChatMessage);

@@ -113,11 +113,18 @@
                 </div>
             </div>
         </div>
-        <div class="messages-list"></div>
+        <div class="messages-list">
+        </div>
         <div class="message-block">
-            <textarea type="text" id="message_input" class="message-field" placeholder="Сообщение..." title="Shift+enter для новой строки" autocomplete="false" required></textarea>
-            <input type="hidden" id="message_input_chat_id" required>
-            <button type="button" title="Shift+enter для новой строки" onclick="sendMessageToChat()">►</button>
+            <div id="message_files_list" class="message-files-list" style="display: none">
+            </div>
+            <div class="message-block-inputs-zone">
+                <label for="message_files" class="message-files-button" ></label>
+                <input type="file" id="message_files" style="display: none" multiple>
+                <textarea type="text" id="message_input" class="message-field" placeholder="Сообщение..." title="Shift+enter для новой строки" autocomplete="false" required></textarea>
+                <input type="hidden" id="message_input_chat_id" required>
+                <button type="button" title="Shift+enter для новой строки" onclick="sendMessageToChat()">►</button>
+            </div>
         </div>
     </div>
 </div>

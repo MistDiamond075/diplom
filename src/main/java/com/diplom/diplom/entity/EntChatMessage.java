@@ -1,9 +1,11 @@
 package com.diplom.diplom.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
 @Table(name="chat_message",schema = "db_diplom")
@@ -26,6 +28,9 @@ public class EntChatMessage {
     @ManyToOne
     @JoinColumn(name="replyto")
     private EntChatMessage replyTo;
+    @OneToMany(mappedBy = "messageId", cascade = CascadeType.REMOVE)
+    @JsonIgnore
+    private List<EntChatfiles> files;
 
     public EntChatMessage() {
     }
@@ -85,5 +90,13 @@ public class EntChatMessage {
 
     public void setReplyTo(EntChatMessage replyTo) {
         this.replyTo = replyTo;
+    }
+
+    public List<EntChatfiles> getFiles() {
+        return files;
+    }
+
+    public void setFiles(List<EntChatfiles> files) {
+        this.files = files;
     }
 }

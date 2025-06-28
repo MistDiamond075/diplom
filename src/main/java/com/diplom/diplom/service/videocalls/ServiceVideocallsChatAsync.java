@@ -27,15 +27,11 @@ public class ServiceVideocallsChatAsync {
     }
 
     @Async
-    public CompletableFuture<ResponseEntity<?>> addMessage(Long videocallId,String message_text,Long replyTo, DiplomUserDetails userDetails) {
+    public CompletableFuture<ResponseEntity<?>> addMessage(Long videocallId,String message_text,Long replyTo, DiplomUserDetails userDetails) throws AccessException {
+        DTOMessageVideocall message= srvVideocallsChat.addMessage(videocallId,message_text,replyTo, userDetails);
         return CompletableFuture.supplyAsync(() -> {
-                    try {
-                        DTOMessageVideocall message= srvVideocallsChat.addMessage(videocallId,message_text,replyTo, userDetails);
-                        sendMessage(message);
-                        return message;
-                    } catch (AccessException e) {
-                        throw new RuntimeException(e);
-                    }
+                    sendMessage(message);
+                    return message;
                 })
                 .thenApply(ResponseEntity::ok)
                 .handle((result, ex) ->{

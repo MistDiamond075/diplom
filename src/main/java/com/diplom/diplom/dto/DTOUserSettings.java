@@ -3,19 +3,21 @@ package com.diplom.diplom.dto;
 public class DTOUserSettings {
     public enum voiceModes{VOICE,PUSH_TO_TALK}
     public enum userDisplayModes{USERNAME,FULLNAME}
-    public String[] keysPushToTalk=new String[2];
-    public String portPushToTalk;
-    public voiceModes voiceMode;
-    public userDisplayModes userDisplay;
+    private String[] keysPushToTalk=new String[2];
+    private String portPushToTalk;
+    private Integer soundsVolume;
+    private voiceModes voiceMode;
+    private userDisplayModes userDisplay;
 
     public DTOUserSettings() {
     }
 
-    public DTOUserSettings(String[] keysPushToTalk, voiceModes voiceMode, userDisplayModes userDisplay, String portPushToTalk) {
+    public DTOUserSettings(String[] keysPushToTalk, voiceModes voiceMode, userDisplayModes userDisplay, String portPushToTalk, Integer soundsVolume) {
         this.keysPushToTalk = keysPushToTalk;
         this.voiceMode = voiceMode;
         this.userDisplay = userDisplay;
         this.portPushToTalk = portPushToTalk;
+        this.soundsVolume = soundsVolume;
     }
 
     public String[] getKeysPushToTalk() {
@@ -48,5 +50,13 @@ public class DTOUserSettings {
 
     public void setUserDisplay(userDisplayModes userDisplay) {
         this.userDisplay = userDisplay;
+    }
+
+    public Integer getSoundsVolume() {
+        return soundsVolume;
+    }
+
+    public void setSoundsVolume(Integer soundsVolume) {
+        this.soundsVolume = soundsVolume;
     }
 }

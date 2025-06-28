@@ -9,10 +9,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.safety.Safelist;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 @Component
@@ -83,5 +87,10 @@ public class Parser {
         Document doc=Jsoup.parse(newtext);
         doc.outputSettings().prettyPrint(false);
         return doc.body().html();
+    }
+
+    public static MediaType parseFileContentType(Path filePath) throws IOException {
+        String contentType= Files.probeContentType(filePath);
+        return contentType!=null ? MediaType.parseMediaType(contentType): MediaType.APPLICATION_OCTET_STREAM;
     }
 }

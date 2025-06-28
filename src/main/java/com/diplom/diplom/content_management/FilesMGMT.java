@@ -33,10 +33,10 @@ public class FilesMGMT {
         return fullpath.toString();
     }
 
-    public static List<String> saveFiles(MultipartFile[] files,String dirpath,Long task_id,Long user_id) {
+    public static List<String> saveFiles(MultipartFile[] files,String dirpath,Long entity_id,Long additional_id) {
         List<String> filepathList = new ArrayList<>();
         if(files.length>0) {
-            String fullpath=dirpath+'/'+task_id+'/'+user_id;
+            String fullpath=dirpath+'/'+entity_id+(additional_id!=null ? '/'+additional_id : "");
             File filesdir = new File(fullpath);
             if (!filesdir.exists()) {
                 if (!filesdir.mkdirs()) {
@@ -45,7 +45,7 @@ public class FilesMGMT {
             }
             int s = 1;
             for (MultipartFile file : files) {
-                String pathtofile=saveAsOriginal(fullpath,file,user_id+"_"+s+"_"+file.getOriginalFilename());
+                String pathtofile=saveAsOriginal(fullpath,file,(additional_id!=null ? additional_id+"_"+s+"_"+file.getOriginalFilename() : entity_id+"_"+s+"_"+file.getOriginalFilename()));
                 filepathList.add(pathtofile);
                 s++;
             }

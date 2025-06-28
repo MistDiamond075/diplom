@@ -127,6 +127,30 @@ function showInfoMessage(text,isError=true){
     }
 }
 
+const observer = new IntersectionObserver(entries => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            const el = entry.target;
+            const actualSrc = el.getAttribute('data-src');
+            if(actualSrc) {
+                el.setAttribute('src', actualSrc);
+                if (el.parentElement.tagName.toLowerCase() === 'video' || el.parentElement.tagName.toLowerCase() === 'audio') {
+                    const source = document.createElement('source');
+                    source.setAttribute('src', actualSrc);
+                    source.type = el.tagName.toLowerCase() + '/mp4';
+                    el.appendChild(source);
+                    el.parentElement.load();
+                }
+            }
+            observer.unobserve(el);
+        }
+    });
+}, { threshold: 0.1 });
+
+function observeLazyElement(el) {
+    observer.observe(el);
+}
+
 function logout(){
     fetch('logout',{
         method: 'post',

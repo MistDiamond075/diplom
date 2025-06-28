@@ -126,6 +126,13 @@ function fillSettingsContainer(type){
             pttPort.second.setAttribute('min','0');
             pttPort.first.innerHTML=pttPort.first.innerText+'<br><span style="color: #a9a9a9;font-family: monospace">(Оставить пустым, если не изменялся)</span>';
             elementsToAdd.push(pttPort);
+            const soundsVolume=createLabeledElement('input','settings-slider','settings_sound_volume','Громкость звуков');
+            soundsVolume.second.type='range';
+            soundsVolume.first.innerText+=' '+soundsVolume.second.value+'%';
+            soundsVolume.second.addEventListener('input',()=>{
+                soundsVolume.first.innerText=soundsVolume.first.innerText.replace(/\d+/,soundsVolume.second.value);
+            });
+            elementsToAdd.push(soundsVolume);
             const usernameDisplaySelector=createLabeledElement('select','settings-selector','settings_user_display_mode','Отображение пользователей');
             for(let i in Object.entries(settingUsernameDisplay)) {
                 createOptionForSelector(usernameDisplaySelector.second, Object.entries(settingUsernameDisplay)[i]);
@@ -141,7 +148,9 @@ function fillSettingsContainer(type){
                 const existedSettings=JSON.parse(localStorage.getItem('userSettings'));
                 voiceSelector.second.value=existedSettings.voiceMode;
                 usernameDisplaySelector.second.value=existedSettings.userDisplay;
-                pttPort.second.value=existedSettings.pttPort;
+                pttPort.second.value=existedSettings.portPushToTalk;
+                soundsVolume.second.value=existedSettings.soundsVolume;
+                soundsVolume.first.innerText=soundsVolume.first.innerText.replace(/\d+/,existedSettings.soundsVolume);
                 if(existedSettings.keysPushToTalk.length>0) {
                     pttKeyInput.second.value = existedSettings.keysPushToTalk[0];
                     if(existedSettings.keysPushToTalk.length>1){
@@ -259,11 +268,13 @@ function sendSettingsToSv(){
     pttKeysArray.forEach(key => pttKeys.push(key.value));
     const userDisplayMode=document.getElementById('settings_user_display_mode').value;
     const pttPort=document.getElementById('settings_ptt_port').value;
+    const sndVol=document.getElementById('settings_sound_volume').value;
     const senddata={
         voiceMode:voiceMode,
         userDisplay:userDisplayMode,
         keysPushToTalk:pttKeys,
-        portPushToTalk:pttPort
+        portPushToTalk:pttPort,
+        soundsVolume:sndVol
     }
     fetch('/addUserSettings',{
         method:'post',

@@ -252,11 +252,20 @@ textarea{
     height: 100%;
     width: 100%;
     overflow: auto;
+    position: relative;
 }
 .message-block{
+    height: 5%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: stretch;
+    position: relative;
+}
+.message-block-inputs-zone{
     position: relative;
     display: flex;
-    height: 5%;
+    height: 100%;
     width: 100%;
     flex-direction:row;
     justify-content: space-between;
@@ -268,6 +277,44 @@ textarea{
     box-sizing: unset;
     border: 1px solid;
     padding-block: 0;
+}
+.message-files-button{
+    box-sizing: unset;
+    min-width: 30px;
+    height: 100%;
+    background: black url('/files/icons/append-file-icon.png');
+    cursor: pointer;
+    border: 1px solid #309f00;
+}
+.message-files-button:hover{
+    box-shadow:inset 0 0 0 1px #3fd100;
+}
+.message-files-list{
+    position: absolute;
+    display: flex;
+    background: #000000;
+    bottom: 100%;
+    height: 100%;
+    color: #7ecd22;
+    width: 100%;
+    padding: 3px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    overflow-x: clip;
+}
+.message-files-list-file{
+    border: 1px solid #818181;
+    padding: 3px;
+    width: fit-content;
+    display: block;
+    margin-left: 3px;
+    border-radius: 3px;
+    cursor: pointer;
+    overflow: hidden;
+}
+.message-files-list-file:hover{
+    box-shadow: 0 0 0 2px #397b2a;
 }
 .message-field{
     position: relative;
@@ -283,13 +330,25 @@ textarea{
     color: #ffff00;
 }
 .chat-message{
-    font-size:0.9em;
+    font-size: 0.9em;
     margin: 3px;
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    flex-direction: column;
+    flex-wrap: nowrap;
+}
+.chat-message-inner-container{
     display: flex;
     justify-content: flex-start;
     align-items: center;
     flex-direction: row;
     flex-wrap: nowrap;
+    width: 100%;
+}
+.chat-message-file{
+    max-width: 90%;
+    border-radius: 3px;
 }
 .chat-message:hover .chat-message-deletebutton{
     opacity: 1;

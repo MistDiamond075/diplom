@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -31,9 +32,14 @@ public class CtrlChatMessage {
         return srvChatMessage.getMessagesInChat(chatid,page,userDetails);
     }
 
-    @PostMapping("/addMessage/{chatid}")
-    public @ResponseBody CompletableFuture<ResponseEntity<?>> addMessage(@PathVariable Long chatid, @RequestParam(value="replyTo",required = false) Long replyId, @RequestBody EntChatMessage entChatMessage, @AuthenticationPrincipal UserDetails userDetails) throws EntityException, AccessException {
-        return srvChatAsync.addMessageToChat(chatid,replyId,entChatMessage,userDetails);
+    @PostMapping(path = "/addMessage/{chatid}",consumes = {"multipart/form-data"})
+    public @ResponseBody CompletableFuture<ResponseEntity<?>> addMessage(
+            @PathVariable Long chatid,
+            @RequestParam(value="replyTo",required = false) Long replyId,
+            @RequestPart(value = "senddata") EntChatMessage entChatMessage,
+            @RequestPart(value = "files",required = false)MultipartFile[] files,
+            @AuthenticationPrincipal UserDetails userDetails) throws EntityException, AccessException {
+        return srvChatAsync.addMessageToChat(chatid,replyId,entChatMessage,files,userDetails);
     }
 
     @DeleteMapping("/deleteMessage/{msgId}")

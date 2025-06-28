@@ -1,19 +1,14 @@
 package com.diplom.diplom.service.chat;
 
 import com.diplom.diplom.dto.DTOChatMessage;
+import com.diplom.diplom.dto.DTOFile;
 import com.diplom.diplom.dto.converter.ConverterChatMessageToChatMessage;
 import com.diplom.diplom.dto.converter.ConverterFileToEntityFile;
-import com.diplom.diplom.entity.EntChat;
-import com.diplom.diplom.entity.EntChatMessage;
-import com.diplom.diplom.entity.EntChatUser;
-import com.diplom.diplom.entity.EntUser;
+import com.diplom.diplom.entity.*;
 import com.diplom.diplom.exception.AccessException;
 import com.diplom.diplom.exception.EntityException;
 import com.diplom.diplom.misc.utils.Parser;
-import com.diplom.diplom.repository.RepChat;
-import com.diplom.diplom.repository.RepChatMessage;
-import com.diplom.diplom.repository.RepChatUser;
-import com.diplom.diplom.repository.RepUser;
+import com.diplom.diplom.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
@@ -21,10 +16,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,13 +30,17 @@ public class ServiceChatMessage {
     private final RepChat rChat;
     private final RepUser rUser;
     private final RepChatUser rChatUser;
+    private final RepChatFiles rChatFiles;
+    private final ServiceChatFiles srvChatFiles;
 
     @Autowired
-    public ServiceChatMessage(RepChatMessage rChatMessage, RepChat rChat, RepUser rUser, RepChatUser rChatUser) {
+    public ServiceChatMessage(RepChatMessage rChatMessage, RepChat rChat, RepUser rUser, RepChatUser rChatUser, RepChatFiles rChatFiles, ServiceChatFiles srvChatFiles) {
         this.rChatMessage = rChatMessage;
         this.rChat = rChat;
         this.rUser = rUser;
         this.rChatUser = rChatUser;
+        this.rChatFiles = rChatFiles;
+        this.srvChatFiles = srvChatFiles;
     }
 
     public List<DTOChatMessage> getMessagesInChat(Long chatId,int page,UserDetails userDetails) throws EntityException, AccessException {
@@ -71,11 +72,21 @@ public class ServiceChatMessage {
         ));
         Pageable pageable = PageRequest.of(page, 40);
         List<EntChatMessage> messages= rChatMessage.findAllByChatId(chat,pageable).getContent();
-        return messages.stream().map(ConverterChatMessageToChatMessage::convertEntityToDTO).collect(Collectors.toList());
+        List<EntChatfiles> files=rChatFiles.findAllByMessageIdIn(messages);
+        Map<Long, List<DTOFile>> filesByMsgId = files.stream()
+                .collect(Collectors.groupingBy(
+                        f -> f.getMessageId().getId(),
+                        Collectors.mapping(ConverterFileToEntityFile::convertChatFileToDTOFile, Collectors.toList())
+                ));
+        return messages.stream().map(msg -> {
+            DTOChatMessage dtoChatMessage=ConverterChatMessageToChatMessage.convertEntityToDTO(msg);
+            dtoChatMessage.setFiles(filesByMsgId.getOrDefault(msg.getId(),new ArrayList<>()));
+            return dtoChatMessage;
+        }).toList();
     }
 
     @Transactional
-    public DTOChatMessage addMessageToChat(Long chatId, Long replyId, EntChatMessage msg, UserDetails userDetails) throws EntityException, AccessException {
+    public DTOChatMessage addMessageToChat(Long chatId, Long replyId, EntChatMessage msg, MultipartFile[] files, UserDetails userDetails) throws EntityException, AccessException {
         if(userDetails==null){
             throw new AccessException(
                     HttpStatus.UNAUTHORIZED,
@@ -116,6 +127,9 @@ public class ServiceChatMessage {
                 replyTo
         );
         rChatMessage.save(message);
+        if(files!=null && files.length>0) {
+            srvChatFiles.addFiles(files, message);
+        }
         return ConverterChatMessageToChatMessage.convertEntityToDTO(message);
     }
 

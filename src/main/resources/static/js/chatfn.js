@@ -111,7 +111,7 @@ function loadChatData(chatId,page=0){
         const msgContainer = document.querySelector('[id^="chat_messages_"]');
         console.log(data);
         msgContainer.id = 'chat_messages_' + chatId;
-        msgContainer.querySelector('.messages-list').innerText = '';
+        msgContainer.querySelectorAll('.date-separator-container').forEach(container => container.remove());
         chat_id = chatId;
         const containerId = document.getElementById('chat_' + chatId);
         const header = document.querySelector('.chat-header');
@@ -179,15 +179,15 @@ function addMessageToChat(msg,replyTo){
     const userId=Number(document.getElementById('user_id').value);
     if(!document.getElementById('message_'+msg.id)){
         const date=new Date(msg.date);
-        let dateDiv=document.getElementById('date_separator_'+DateTimeToFormat(date.getDate())+'_'+DateTimeToFormat(date.getMonth())+'_'+DateTimeToFormat(date.getFullYear()));
+        let dateDiv=document.getElementById('date_separator_'+DateTimeToFormat(date.getDate())+'_'+DateTimeToFormat(date.getMonth()+1)+'_'+DateTimeToFormat(date.getFullYear()));
         if(!dateDiv){
             dateDiv=document.createElement('div');
             dateDiv.className='date-separator-container';
-            dateDiv.id='date_separator_'+DateTimeToFormat(date.getDate())+'_'+DateTimeToFormat(date.getMonth())+'_'+DateTimeToFormat(date.getFullYear());
+            dateDiv.id='date_separator_'+DateTimeToFormat(date.getDate())+'_'+DateTimeToFormat(date.getMonth()+1)+'_'+DateTimeToFormat(date.getFullYear());
             container.appendChild(dateDiv);
             const span=document.createElement('span');
             span.className='date-separator';
-            span.innerText=DateTimeToFormat(date.getDate())+'.'+DateTimeToFormat(date.getMonth())+'.'+DateTimeToFormat(date.getFullYear());
+            span.innerText=DateTimeToFormat(date.getDate())+'.'+DateTimeToFormat(date.getMonth()+1)+'.'+DateTimeToFormat(date.getFullYear());
             dateDiv.appendChild(span);
         }
         const div=document.createElement('div');
@@ -196,9 +196,12 @@ function addMessageToChat(msg,replyTo){
         div.dataset.username=msg.userId.login;
         div.dataset.user_id=msg.userId.id;
         dateDiv.appendChild(div);
+        const div3=document.createElement('div');
+        div3.className='chat-message-inner-container';
+        div.appendChild(div3);
         const div2=document.createElement('div');
         div2.style.width='100%';
-        div.appendChild(div2);
+        div3.appendChild(div2);
         const span_time=document.createElement('span');
         span_time.className='chat-message-time';
         span_time.innerText=DateTimeToFormat(date.getHours())+':'+DateTimeToFormat(date.getMinutes())+' ';
@@ -225,12 +228,39 @@ function addMessageToChat(msg,replyTo){
         }*/
         span_text.innerHTML = messageText;
         div2.appendChild(span_text);
+        if(msg.files.length>0){
+            msg.files.forEach(file =>{
+                const elementType=file.fileType.type;
+                let docFile=document.createElement(elementType!==null ? elementType : 'span');
+                switch (elementType){
+                    case 'image':{
+                        docFile=document.createElement('img');
+                        docFile.setAttribute('data-src',file.href);
+                    break;}
+                    case 'video':{
+                        docFile.setAttribute('data-src', file.href);
+                        docFile.setAttribute('controls','true');
+                    break;}
+                    case 'audio':{
+                        docFile.setAttribute('data-src', file.href);
+                        docFile.setAttribute('controls','true');
+                    break;}
+                    default:{
+
+                    }
+                }
+                docFile.id='message_'+msg.id+'_file_'+file.id;
+                docFile.className='chat-message-file';
+                div.appendChild(docFile);
+                observeLazyElement(docFile);
+            });
+        }
         if(userId===msg.userId.id) {
             const deleteButton = document.createElement('span');
             deleteButton.innerText = '❌';
             deleteButton.className='chat-message-deletebutton';
             deleteButton.setAttribute('onclick','deleteMessageFromChat(\'' + div.id + '\')');
-            div.appendChild(deleteButton);
+            div3.appendChild(deleteButton);
         }
     }
 }
@@ -249,6 +279,7 @@ function removeMessageFromChat(id){
 
 function sendMessageToChat(chatId=null){
     if(!chat_form_processing) {
+        const formData=new FormData();
         chat_form_processing=true;
         if (chatId === null) {
             chatId = document.getElementById('message_input_chat_id').value;
@@ -258,14 +289,19 @@ function sendMessageToChat(chatId=null){
             showInfoMessage("Не удалось получить идентификатор чата");
             return;
         }
+        const files=Array.from(document.getElementById('message_files').files);
         const text = document.getElementById('message_input').value;
         const senddata = {
             text: text
         };
+        formData.append('senddata', new Blob([JSON.stringify(senddata)], { type: 'application/json' }));
+        if(files.length>0){
+            files.forEach(file => formData.append('files',file));
+        }
         fetch('addMessage/' + chatId, {
             method: 'post',
-            headers: {'Content-Type': 'application/json', [csrfHeader]: csrfToken},
-            body: JSON.stringify(senddata)
+            headers: {'Accept': 'application/json', [csrfHeader]: csrfToken},
+            body: formData
         }).then(response => {
             chat_form_processing = false;
             let js = response.json();
@@ -280,6 +316,16 @@ function sendMessageToChat(chatId=null){
             console.log(data);
             document.getElementById('message_input').value = '';
             document.getElementById('message_input').style.height='100%';
+            const fileList=document.getElementById('message_files_list');
+            const fileInput=document.getElementById('message_files');
+            if(fileList){
+                fileList.innerHTML='';
+                fileList.style.display='none';
+                const dt=new DataTransfer();
+                if(fileInput){
+                    fileInput.files=dt.files;
+                }
+            }
         });
     }else{
         showInfoMessage("Предыдущее сообщение ещё не отправлено");
@@ -463,6 +509,50 @@ function menuChatUsersListener(){
     }
 }
 
+function inputFilesListener(){
+    const input=document.getElementById('message_files');
+    const list=document.getElementById('message_files_list');
+
+    input.addEventListener('change',()=>{
+        list.innerHTML = '';
+        let iterator=1;
+        Array.from(input.files).forEach(file => {
+            const fileSpan = document.createElement('span');
+            fileSpan.className = 'message-files-list-file';
+            fileSpan.id='message_file_list_file_'+iterator;
+            fileSpan.setAttribute('onclick','removeFileFromList(\''+fileSpan.id+'\',\''+file.name+'\')');
+            fileSpan.textContent = file.name;
+            list.appendChild(fileSpan);
+            iterator++;
+        });
+
+        if (list.children.length > 0) {
+            list.style.display = 'flex';
+        } else {
+            list.style.display = 'none';
+        }
+    });
+}
+
+function removeFileFromList(id,fileName){
+    const file=document.getElementById(id);
+    const list=document.getElementById('message_files_list');
+    const input=document.getElementById('message_files');
+    if(file){
+        const dt=new DataTransfer();
+        file.remove();
+        Array.from(input.files).forEach(file => {
+            if(file.name!==fileName){
+                dt.items.add(file);
+            }
+        });
+        input.files=dt.files;
+    }
+    if (list.children.length=== 0) {
+        list.style.display = 'none';
+    }
+}
+
 document.addEventListener('DOMContentLoaded',function (){
     const msgInput=document.getElementById('message_input');
     if(msgInput) {
@@ -486,5 +576,6 @@ document.addEventListener('DOMContentLoaded',function (){
         addSettingsMenuListener('settings-block');
         menuChatUsersListener();
         addTextareaResizeEvent();
+        inputFilesListener();
     }
 },false);

@@ -23,8 +23,7 @@ public class FilesProcessor {
             if (!fileResource.exists()) {
                 return ResponseEntity.notFound().build();
             }
-            String contentType = Files.probeContentType(path);
-            MediaType media_type=contentType!=null ? MediaType.parseMediaType(contentType): MediaType.APPLICATION_OCTET_STREAM;
+            MediaType contentType =Parser.parseFileContentType(path);
             String etag = Generator.generateETag(fileResource.getFile());
             if(request!=null) {
                 String ifNoneMatch = request.getHeader("If-None-Match");
@@ -32,7 +31,7 @@ public class FilesProcessor {
                     return ResponseEntity.status(HttpStatus.NOT_MODIFIED).cacheControl(CacheControl.maxAge(3,TimeUnit.DAYS)).eTag(etag).build();
                 }
             }
-            return ResponseEntity.ok().contentType(media_type).eTag(etag).body(fileResource);
+            return ResponseEntity.ok().contentType(contentType).eTag(etag).body(fileResource);
         } catch (IOException e) {
             logger.error(e.getMessage());
             return ResponseEntity.internalServerError().build();

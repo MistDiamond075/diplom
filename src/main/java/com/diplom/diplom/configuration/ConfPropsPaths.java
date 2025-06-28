@@ -14,6 +14,9 @@ public class ConfPropsPaths {
     @Value("${path.tasksfiles}")
     private String tasksfiles;
 
+    @Value("${path.chatfiles}")
+    private String chatfiles;
+
     public String getTaskscompletedfiles() {
         return taskscompletedfiles;
     }
@@ -24,5 +27,9 @@ public class ConfPropsPaths {
 
     public String getUserfilesfolder() {
         return userfilesfolder;
+    }
+
+    public String getChatfiles() {
+        return chatfiles;
     }
 }

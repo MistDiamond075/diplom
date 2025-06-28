@@ -7,6 +7,7 @@ import com.diplom.diplom.dto.DTOUserSettings;
 import com.diplom.diplom.entity.EntUser;
 import com.diplom.diplom.entity.EntUserfiles;
 import com.diplom.diplom.exception.AccessException;
+import com.diplom.diplom.exception.DataProcessingException;
 import com.diplom.diplom.exception.EntityException;
 import com.diplom.diplom.service.user.ServiceUser;
 import com.diplom.diplom.service.user.ServiceUserfiles;
@@ -53,7 +54,7 @@ public class CtrlUserfiles {
     }
 
     @GetMapping("/usersettings")
-    public DTOUserSettings getUserSettings(@AuthenticationPrincipal DiplomUserDetails userDetails) throws EntityException, AccessException, JsonProcessingException {
+    public DTOUserSettings getUserSettings(@AuthenticationPrincipal DiplomUserDetails userDetails) throws EntityException, AccessException, DataProcessingException {
         return srvUserfiles.getUserSettings(userDetails);
     }
 
