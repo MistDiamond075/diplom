@@ -75,12 +75,15 @@ public class ServiceChatFiles {
     }
 
     @Transactional
-    public void addFiles(MultipartFile[] files, EntChatMessage message) {
+    public List<DTOFile> addFiles(MultipartFile[] files, EntChatMessage message) {
         List<String> file_paths= FilesMGMT.saveFiles(files,app_paths.getChatfiles(),message.getId(), null);
+        List<DTOFile> dtoFiles= new ArrayList<>();
         for(String path:file_paths){
             EntChatfiles file=new EntChatfiles(null,path,message);
             rChatFiles.save(file);
+            dtoFiles.add(ConverterFileToEntityFile.convertChatFileToDTOFile(file));
         }
+        return dtoFiles;
     }
 
     private boolean isUserChatMember(EntUser user,EntChat chat) {

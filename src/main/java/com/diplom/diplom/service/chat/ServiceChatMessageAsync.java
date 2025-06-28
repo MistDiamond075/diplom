@@ -56,6 +56,7 @@ public class ServiceChatMessageAsync {
                 .put("date",dtoChatMessage.getDate())
                 .put("chatId",dtoChatMessage.getChatId())
                 .put("userId",userId)
+                .put("files",dtoChatMessage.getFiles())
                 .put("replyTo",dtoChatMessage.getReplyTo());
         JSONObject response=new JSONObject()
                 .put("event","chatmsg")

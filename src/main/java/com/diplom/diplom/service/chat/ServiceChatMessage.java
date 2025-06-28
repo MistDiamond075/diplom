@@ -127,10 +127,12 @@ public class ServiceChatMessage {
                 replyTo
         );
         rChatMessage.save(message);
+        DTOChatMessage dtoChatMessage= ConverterChatMessageToChatMessage.convertEntityToDTO(message);
         if(files!=null && files.length>0) {
-            srvChatFiles.addFiles(files, message);
+            List<DTOFile> fileList=srvChatFiles.addFiles(files, message);
+            dtoChatMessage.setFiles(fileList);
         }
-        return ConverterChatMessageToChatMessage.convertEntityToDTO(message);
+        return dtoChatMessage;
     }
 
     @Transactional
