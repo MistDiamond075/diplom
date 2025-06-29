@@ -1368,12 +1368,10 @@ function replaceDisplayStreams(promise,videoroomHandle,camera){
             }
         }
         console.log(camera);
-        /*if(!camera) {
-            screenTrack.onended = () => {
-                console.log("🛑 Демонстрация экрана завершена");
-                ScreenSharing(videoroomHandle, camera);
-            };
-        }*/
+        screenTrack.onended = () => {
+            console.log("🛑 Демонстрация экрана завершена");
+            updateDemonstrationState();
+        };
     })
         .catch(err => {
             console.error(camera,err);

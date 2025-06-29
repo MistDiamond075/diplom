@@ -196,6 +196,9 @@ public class ServiceVideocallsAsync {
                         .put("timestamp",message.getDate())
                         .put("username",message.getVideocalluserId().getVideocalluserId().getLastname()+" "+message.getVideocalluserId().getVideocalluserId().getFirstname()+" "+message.getVideocalluserId().getVideocalluserId().getSurname())
                         .put("login",message.getVideocalluserId().getVideocalluserId().getLogin())
+                        .put("firstname",message.getVideocalluserId().getVideocalluserId().getFirstname())
+                        .put("lastname",message.getVideocalluserId().getVideocalluserId().getLastname())
+                        .put("surname",message.getVideocalluserId().getVideocalluserId().getSurname())
                         .put("replyToId",message.getReplyto()!=null ? message.getReplyto().getVideocalluserId().getId() : JSONObject.NULL)
                         .put("replyToName",message.getReplyto()!=null ? message.getReplyto().getVideocalluserId().getLogin() : JSONObject.NULL);
                 bodyMessagesArray.put(bodyMessage);
