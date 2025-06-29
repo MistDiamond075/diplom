@@ -144,9 +144,34 @@ a{
 }
 .settings-slider{
     -webkit-appearance: none;
-    background: #68996c;
+    background: #1d1e1b;
     cursor: pointer;
-    margin-bottom: 10px;
+    height: 6px;
+    margin-bottom: 7px;
+}
+.settings-slider::-webkit-slider-thumb{
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    margin-top: -1px;
+    background: #139e00;
+    border-radius: 2px;
+}
+ .settings-slider::-moz-range-thumb{
+    -webkit-appearance: none;
+    width: 12px;
+    height: 12px;
+    margin-top: -1px;
+    background: #139e00;
+    border-radius: 2px;
+}
+.settings-slider::-webkit-slider-thumb:hover{
+    -webkit-appearance: none;
+    background: #7cb805;
+}
+.settings-slider::-moz-range-thumb:hover{
+    -webkit-appearance: none;
+    background: #7cb805;
 }
 .info-messages{
     position: fixed;

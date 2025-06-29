@@ -272,7 +272,7 @@ function connectToVideocallWs(room_id,user_id,videoroomHandle) {
             img.id='user_avatar_'+participant.id;
             img.className = "user-participant-avatar";
             const span = document.createElement("span");
-            span.textContent = participant.lastname + " " + participant.firstname + " " + participant.surname;
+            span.textContent = getUserCredentials(participant);
             div1.appendChild(div2);
             div2.appendChild(div3);
             div3.appendChild(img);
@@ -433,7 +433,7 @@ function createSettingsBlock(container,participant) {
             const span_name=document.createElement('span');
             span_name.className='chat-message-username';
             span_name.style['color']=generateNameColor('#2e2e2e');
-            span_name.innerText=msg.login+': ';
+            span_name.innerText=getUserCredentials(msg)+': ';
             div.appendChild(span_time);
             div.appendChild(span_name);
             const span_text=document.createElement('span');
@@ -486,7 +486,11 @@ function updateUserSettings(status,action,self,userId=null){
         return response.json();
     }).then(data =>{
         console.log(data);
-        isSoundMuted=data.soundstate!=='ON';
+        if(self) {
+            if (data) {
+                isSoundMuted = data !== 'ON';
+            }
+        }
     });
 }
 

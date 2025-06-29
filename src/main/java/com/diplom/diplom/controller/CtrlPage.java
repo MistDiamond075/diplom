@@ -2,8 +2,11 @@ package com.diplom.diplom.controller;
 
 import com.diplom.diplom.configuration.userdetails.DiplomUserDetails;
 import com.diplom.diplom.dto.*;
+import com.diplom.diplom.dto.converter.ConverterCompletedTaskToCompletedTask;
+import com.diplom.diplom.dto.converter.ConverterTasksToTasks;
 import com.diplom.diplom.entity.*;
 import com.diplom.diplom.exception.AccessException;
+import com.diplom.diplom.exception.DataProcessingException;
 import com.diplom.diplom.exception.EntityException;
 import com.diplom.diplom.misc.utils.Parser;
 import com.diplom.diplom.service.*;
@@ -11,6 +14,7 @@ import com.diplom.diplom.service.chat.ServiceChat;
 import com.diplom.diplom.service.tasks.ServiceTasks;
 import com.diplom.diplom.service.tasks.ServiceTasksCompleted;
 import com.diplom.diplom.service.user.ServiceUser;
+import com.diplom.diplom.service.user.ServiceUserfiles;
 import com.diplom.diplom.service.videocalls.ServiceVideocalls;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -37,8 +41,9 @@ public class CtrlPage {
     private final ServiceVideocalls srvVideocalls;
     private final ServicePasswordRestoreMails srvPasswordRestoreMails;
     private final ServiceChat srvChat;
+    private final ServiceUserfiles srvUserfiles;
 
-    public CtrlPage(ServiceJournal srvJournal, ServiceUser srvUser, ServiceGroup srvGroup, ServiceSubject srvSubject, ServiceTasks srvTasks, ServiceTasksCompleted srvTasksCompleted, ServiceConference srvConference, ServiceVideocalls srvVideocalls, ServicePasswordRestoreMails srvPasswordRestoreMails, ServiceChat srvChat) {
+    public CtrlPage(ServiceJournal srvJournal, ServiceUser srvUser, ServiceGroup srvGroup, ServiceSubject srvSubject, ServiceTasks srvTasks, ServiceTasksCompleted srvTasksCompleted, ServiceConference srvConference, ServiceVideocalls srvVideocalls, ServicePasswordRestoreMails srvPasswordRestoreMails, ServiceChat srvChat, ServiceUserfiles srvUserfiles) {
         this.srvJournal = srvJournal;
         this.srvUser = srvUser;
         this.srvGroup = srvGroup;
@@ -49,6 +54,7 @@ public class CtrlPage {
         this.srvVideocalls = srvVideocalls;
         this.srvPasswordRestoreMails = srvPasswordRestoreMails;
         this.srvChat = srvChat;
+        this.srvUserfiles = srvUserfiles;
     }
 
     @GetMapping(path = "/")
@@ -163,10 +169,9 @@ public class CtrlPage {
     }
 
     @GetMapping(path = "/tasks")
-    public String getTaskspage(@AuthenticationPrincipal DiplomUserDetails userDetails, Model model) throws EntityException {
-        String username = Objects.requireNonNull(userDetails).getUsername();
-        List<EntTasks> taskList = null;
-        EntUser user = srvUser.getUserByUsername(Objects.requireNonNull(username));
+    public String getTaskspage(@AuthenticationPrincipal DiplomUserDetails userDetails, Model model) {
+        List<EntTasks> taskList = new ArrayList<>(1);
+        EntUser user = userDetails.getUser();
         String userrole = Parser.parseUserRole(userDetails);
         if (userrole.equals("ROLE_STUDENT")) {
             List<EntGroup> group = user.getGroups();
@@ -177,7 +182,7 @@ public class CtrlPage {
         userrole = userrole.substring(userrole.indexOf("ROLE_") + 5);
         List<EntSubject> subjects=srvSubject.getSubjects();
         List<EntGroup> groups=srvGroup.getGroups();
-        model.addAttribute("taskList", taskList);
+        model.addAttribute("taskList", taskList.stream().map(ConverterTasksToTasks::convertEntityToDTOwithGroups).toList());
         model.addAttribute("userrole", userrole);
         model.addAttribute("subject_list",subjects);
         model.addAttribute("group_list",groups);
@@ -213,10 +218,10 @@ public class CtrlPage {
             List<EntTasksCompleted> tasksCompletedList=srvTasksCompleted.getTasksCompletedByTask(task);
             model.addAttribute("students",dtoUserTasks);
             model.addAttribute("groups",groupList);
-            model.addAttribute("completedtasks",tasksCompletedList);
+            model.addAttribute("completedtasks",tasksCompletedList.stream().map(ConverterCompletedTaskToCompletedTask::convertEntityToDTO).toList());
         }
         EntTasksCompleted completedtask = studentId==null ? srvTasksCompleted.getCompletedTaskByUserIdAndTaskId(user.getId(), task.getId()) : srvTasksCompleted.getCompletedTaskByUserIdAndTaskId(srvUser.getUserById(studentId).getId(), task.getId());
-        model.addAttribute("completedtask", completedtask);
+        model.addAttribute("completedtask", completedtask!=null ? ConverterCompletedTaskToCompletedTask.convertEntityToDTO(completedtask) : null);
         model.addAttribute("user_id",user.getId());
         return "taskpage";
     }
@@ -300,8 +305,8 @@ public class CtrlPage {
     }
 
     @GetMapping("/chats")
-    public String getChatsPage(@AuthenticationPrincipal DiplomUserDetails userDetails, Model model,@RequestParam(value = "page",defaultValue = "0") int page) throws EntityException, AccessException {
-        String username = Objects.requireNonNull(userDetails).getUsername();
+    public String getChatsPage(@AuthenticationPrincipal DiplomUserDetails userDetails, Model model,@RequestParam(value = "page",defaultValue = "0") int page) throws EntityException, AccessException, DataProcessingException {
+        DTOUserSettings settings=srvUserfiles.getUserSettings(userDetails);
         String userrole = Parser.parseUserRole(userDetails);
         List<DTOChatDisplay> chats=srvChat.getChatsDTO(userDetails,page);
         List<EntGroup> groupList = srvGroup.getGroups();
@@ -310,6 +315,11 @@ public class CtrlPage {
         model.addAttribute("groups", groupList);
         model.addAttribute("userrole", userrole);
         model.addAttribute("chatList", chats);
+        try{
+            model.addAttribute("userDisplay", settings.getUserDisplay()== DTOUserSettings.userDisplayModes.USERNAME);
+        } catch (Exception e) {
+            model.addAttribute("userDisplay",true);
+        }
         return "chatspage";
     }
 

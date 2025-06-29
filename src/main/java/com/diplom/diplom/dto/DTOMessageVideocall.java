@@ -8,11 +8,11 @@ public class DTOMessageVideocall {
     private Long id;
     private String message;
     private LocalDateTime date;
-    private EntVideocallsHasUser videocalluserId;
+    private DTOVideocallsHasUser videocalluserId;
     private Long replyTo;
     private String replyToName;
 
-    public DTOMessageVideocall(Long id, String message, LocalDateTime date, EntVideocallsHasUser videocalluserId, Long replyTo, String replyToName) {
+    public DTOMessageVideocall(Long id, String message, LocalDateTime date, DTOVideocallsHasUser videocalluserId, Long replyTo, String replyToName) {
         this.id = id;
         this.message = message;
         this.date = date;
@@ -45,11 +45,11 @@ public class DTOMessageVideocall {
         this.date = date;
     }
 
-    public EntVideocallsHasUser getVideocalluserId() {
+    public DTOVideocallsHasUser getVideocalluserId() {
         return videocalluserId;
     }
 
-    public void setVideocalluserId(EntVideocallsHasUser videocalluserId) {
+    public void setVideocalluserId(DTOVideocallsHasUser videocalluserId) {
         this.videocalluserId = videocalluserId;
     }
 

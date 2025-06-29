@@ -47,7 +47,7 @@ public class ServiceVideocallsAsync {
             EntVideocallsHasUser videocallsHasUser=srvVideocalls.joinVideocalls(videocallId, userDetails);
         return CompletableFuture.supplyAsync(() -> {
                     sendVideocallsHasUserParticipants(videocallsHasUser.getVideocallsId());
-                    return ResponseEntity.ok(videocallsHasUser);
+                    return ResponseEntity.ok().build();
                 }).handle((result,ex) ->{
                     if (ex == null) return result;
                     Throwable cause = ex instanceof CompletionException ? ex.getCause() : ex;
@@ -75,7 +75,7 @@ public class ServiceVideocallsAsync {
         EntVideocallsHasUser videocallsHasUser=srvVideocalls.leaveVideocalls(videocallId,reason, userDetails);
         return CompletableFuture.supplyAsync(() -> {
                     removeVideocallsHasUserParticipant(videocallsHasUser.getVideocalluserId().getId(),videocallsHasUser.getVideocallsId().getRoomId());
-                    return ResponseEntity.ok(videocallsHasUser);
+                    return ResponseEntity.ok().build();
                 }).handle((result,ex) ->{
                     if (ex == null) return result;
                     Throwable cause = ex instanceof CompletionException ? ex.getCause() : ex;
@@ -102,7 +102,7 @@ public class ServiceVideocallsAsync {
         return CompletableFuture.supplyAsync(() -> {
                     sendUserUpdate(videocallsHasUser.getVideocallsHasUser(),videocallsHasUser.getState(),action,(action== ServiceVideocalls.UpdateActions.AUDIO ||
                             action== ServiceVideocalls.UpdateActions.VIDEO));
-                    return ResponseEntity.ok(videocallsHasUser.getVideocallsHasUser());
+                    return ResponseEntity.ok(videocallsHasUser.getVideocallsHasUser().getSoundstate());
                 }).handle((result,ex) ->{
                     if (ex == null) return result;
                     Throwable cause = ex instanceof CompletionException ? ex.getCause() : ex;
@@ -129,7 +129,7 @@ public class ServiceVideocallsAsync {
         return CompletableFuture.supplyAsync(() -> {
                     sendUserOtherUpdate(videocallsHasUser.getVideocallsHasUser(),videocallsHasUser.getState(),action,(action== ServiceVideocalls.UpdateActions.AUDIO ||
                             action== ServiceVideocalls.UpdateActions.VIDEO),videocallsHasUser.getBanned());
-                    return ResponseEntity.ok(videocallsHasUser.getVideocallsHasUser());
+                    return ResponseEntity.ok().build();
                 }).handle((result,ex) ->{
                     if (ex == null) return result;
                     Throwable cause = ex instanceof CompletionException ? ex.getCause() : ex;

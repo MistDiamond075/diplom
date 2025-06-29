@@ -85,7 +85,7 @@
                 <div class="chat-users">
                     <div th:each="chatuser, iterator : ${chat.user}" style="display: flex; flex-direction: row;align-items: center;margin-right: 10px;">
                         <img th:if="${iterator.index}<3" th:src="'/useravatar/'+${chatuser.id}">
-                        <span th:if="${iterator.index}<3" class="chat-user" th:text="${chatuser.login}"></span>
+                        <span th:if="${iterator.index}<3" class="chat-user" th:text="${userDisplay ? chatuser.login : chatuser.firstname}"></span>
                         <span th:if="${iterator.index}==3" th:text="'+'+${chat.user.size()-3}" class="chat-user" style="font-weight: bold;font-style: normal"></span>
                     </div>
                 </div>

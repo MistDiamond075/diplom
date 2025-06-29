@@ -24,6 +24,51 @@ function getUserSettingsFromSv(){
     }
 }
 
+function stylesheetToCSSText(sheet) {
+    let result = '';
+    console.log(sheet);
+    try {
+        for (const rule of sheet.cssRules) {
+            if (rule.type === CSSRule.STYLE_RULE) {
+                const selector = rule.selectorText;
+                const declarations = [];
+                for (let i = 0; i < rule.style.length; i++) {
+                    const propName = rule.style[i];
+                    const value = rule.style.getPropertyValue(propName);
+                    declarations.push(`  ${propName}: ${value};`);
+                }
+                result += `${selector} {\n${declarations.join('\n')}\n}\n\n`;
+            } else {
+                result += rule.cssText + '\n\n';
+            }
+        }
+    } catch (e) {
+        showInfoMessage('Ошибка формирования css');
+        console.warn(e);
+    }
+    return result.trim();
+}
+
+function getActiveUserCss(){
+    for(let sheet of document.styleSheets){
+        if(sheet.href){
+            if(sheet.href.includes('usercss')){
+                return  sheet;
+            }
+        }
+    }
+    return null;
+}
+
+function getActiveUserCssRuleBySelector(userCSS){
+    for(let i=0;i<userCSS.cssRules.length;i++) {
+        if (userCSS.cssRules[i].selectorText === 'body') {
+            return userCSS.cssRules[i];
+        }
+    }
+    return null;
+}
+
 function parseKey(event){
     /*const doubleKeys=['Alt','Shift','Control'];
     const numpadKeys=['Numpad1','Numpad2','Numpad3','Numpad4','Numpad5','Numpad6','Numpad7','Numpad8','Numpad9','Numpad0','NumpadMinus','NumpadMultiply','NumpadDecimal',
@@ -163,6 +208,15 @@ function fillSettingsContainer(type){
                         pttKeysContainerInnerDiv.appendChild(pttKeyInput2.second);
                     }
                 }
+                const userCss=getActiveUserCss();
+                console.log(userCss);
+                if(userCss){
+                    const cssRule=getActiveUserCssRuleBySelector(userCss);
+                    console.log(cssRule);
+                    if(cssRule){
+                        fontSize.second.value=cssRule.style.fontSize ? cssRule.style.fontSize.match(/^\d+/) : '';
+                    }
+                }
             }
         break;}
     }
@@ -240,8 +294,8 @@ function removePushToTalkKeyInput(){
     }
 }
 
-function sendCustomCssToSv(){
-    const cssText=document.getElementById('custom_css_text').value;
+function sendCustomCssToSv(css){
+    const cssText=document.getElementById('custom_css_text') ? document.getElementById('custom_css_text').value : css;
     const senddata={
         text:cssText
     };
@@ -256,7 +310,7 @@ function sendCustomCssToSv(){
         if(!response.ok){
             showInfoMessage("Непредвиденная ошибка");
         }else {
-            window.location.reload();
+            //window.location.reload();
         }
     });
 }
@@ -293,6 +347,32 @@ function sendSettingsToSv(){
     }).then(data =>{
         localStorage.setItem('userSettings',JSON.stringify(data));
     });
+
+    const fontSize=document.getElementById('settings_font_size').value!=='' ? document.getElementById('settings_font_size').value+'px' : null;
+    let userCSS=getActiveUserCss();
+    if(userCSS) {
+        let changed=false;
+        for(let i=0;i<userCSS.cssRules.length;i++){
+            if(userCSS.cssRules[i].selectorText==='body'){
+                const style=userCSS.cssRules[i].style;
+                if(fontSize) {
+                    style.fontSize = fontSize;
+                }else{
+                    style.removeProperty('font-size');
+                }
+                changed=true;
+                break;
+            }
+        }
+        if(!changed){
+            const cssText=fontSize ? 'body { font-size:'+fontSize+'; }' : 'body { }';
+            userCSS.insertRule(cssText,0);
+        }
+        sendCustomCssToSv(stylesheetToCSSText(userCSS));
+    }else{
+        const cssText=fontSize ? 'body { font-size:'+fontSize+'; }' : 'body { }';
+        sendCustomCssToSv(cssText);
+    }
 }
 
 function getCustomCssFromSv(){

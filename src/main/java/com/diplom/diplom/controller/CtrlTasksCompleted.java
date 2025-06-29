@@ -1,5 +1,7 @@
 package com.diplom.diplom.controller;
 
+import com.diplom.diplom.dto.DTOCompletedTask;
+import com.diplom.diplom.dto.converter.ConverterCompletedTaskToCompletedTask;
 import com.diplom.diplom.entity.EntTasksCompleted;
 import com.diplom.diplom.exception.AccessException;
 import com.diplom.diplom.exception.EntityException;
@@ -26,8 +28,9 @@ public class CtrlTasksCompleted {
     }
 
     @GetMapping("/task/{taskId}/getTaskCompletedByUserId")
-    public @ResponseBody EntTasksCompleted getTaskCompletedByUseridAndTaskid(@RequestParam(value = "userId") Long userId, @PathVariable Long taskId){
-        return srvTasksCompleted.getCompletedTaskByUserIdAndTaskId(userId,taskId);
+    public @ResponseBody DTOCompletedTask getTaskCompletedByUseridAndTaskid(@RequestParam(value = "userId") Long userId, @PathVariable Long taskId){
+        EntTasksCompleted taskCompleted=srvTasksCompleted.getCompletedTaskByUserIdAndTaskId(userId,taskId);
+        return taskCompleted!=null ? ConverterCompletedTaskToCompletedTask.convertEntityToDTO(taskCompleted) : null;
     }
 
     @PostMapping("/task/{task_id}/addTaskCompleted")

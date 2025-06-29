@@ -1,5 +1,7 @@
 package com.diplom.diplom.controller;
 
+import com.diplom.diplom.dto.DTOVideocallsHasUser;
+import com.diplom.diplom.dto.converter.ConverterVideocallsHasUserToVideocallsHasUser;
 import com.diplom.diplom.entity.EntVideocalls;
 import com.diplom.diplom.entity.EntVideocallsHasUser;
 import com.diplom.diplom.exception.AccessException;
@@ -28,8 +30,8 @@ public class CtrlVideocalls {
     }
 
     @GetMapping("/videocall/{id}/user/getData")
-    public @ResponseBody EntVideocallsHasUser getUserData(@PathVariable Long id, @AuthenticationPrincipal DiplomUserDetails userDetails) throws AccessException, EntityException {
-        return srvVideocalls.getVideocallsHasUserByUserDetailsAndVideocallId(userDetails,id);
+    public @ResponseBody DTOVideocallsHasUser getUserData(@PathVariable Long id, @AuthenticationPrincipal DiplomUserDetails userDetails) throws AccessException, EntityException {
+        return ConverterVideocallsHasUserToVideocallsHasUser.convertEntityToDTO(srvVideocalls.getVideocallsHasUserByUserDetailsAndVideocallId(userDetails,id));
     }
 
     @GetMapping("/videocall/{id}/join")

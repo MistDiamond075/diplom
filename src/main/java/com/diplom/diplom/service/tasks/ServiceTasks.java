@@ -1,6 +1,8 @@
 package com.diplom.diplom.service.tasks;
 
 import com.diplom.diplom.configuration.userdetails.DiplomUserDetails;
+import com.diplom.diplom.dto.DTOTasks;
+import com.diplom.diplom.dto.converter.ConverterTasksToTasks;
 import com.diplom.diplom.entity.EntGroup;
 import com.diplom.diplom.entity.EntSubject;
 import com.diplom.diplom.entity.EntTasks;
@@ -22,6 +24,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class ServiceTasks {
@@ -40,8 +43,9 @@ public class ServiceTasks {
         this.srvTasksfiles = srvTasksfiles;
     }
 
-    public List<EntTasks> getTasks(){
-        return rTasks.findAll();
+    public List<DTOTasks> getTasks(){
+        List<EntTasks> tasks= rTasks.findAll();
+        return tasks.stream().map(ConverterTasksToTasks::convertEntityToDTO).toList();
     }
 
     public List<EntTasks> getTasksByGroupId(List<EntGroup> group){

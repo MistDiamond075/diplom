@@ -1,6 +1,7 @@
 package com.diplom.diplom.controller;
 
 import com.diplom.diplom.configuration.userdetails.DiplomUserDetails;
+import com.diplom.diplom.dto.DTOTasks;
 import com.diplom.diplom.entity.EntTasks;
 import com.diplom.diplom.exception.AccessException;
 import com.diplom.diplom.exception.EntityException;
@@ -22,7 +23,7 @@ public class CtrlTasks {
     }
 
     @GetMapping("/getTasks")
-    public @ResponseBody List<EntTasks> getTasks(){
+    public @ResponseBody List<DTOTasks> getTasks(){
         return srvTasks.getTasks();
     }
 

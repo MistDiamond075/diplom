@@ -167,7 +167,7 @@ function loadChatData(chatId,page=0){
             img.className='users-menu-avatar';
             div.appendChild(img);
             const span=document.createElement('span');
-            span.innerText=user.login;
+            span.innerText=getUserCredentials(user);
             span.className='chat-user';
             div.appendChild(span);
         }
@@ -208,7 +208,7 @@ function addMessageToChat(msg,replyTo){
         const span_name=document.createElement('span');
         span_name.className='chat-message-username';
         span_name.style['color']=generateNameColor('#2e2e2e');
-        span_name.innerText=msg.userId.login+': ';
+        span_name.innerText=getUserCredentials(msg.userId)+': ';
         div2.appendChild(span_time);
         div2.appendChild(span_name);
         const span_text=document.createElement('span');

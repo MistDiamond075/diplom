@@ -25,6 +25,26 @@ function getDateTime(){
         +date.getDate()+" "+DateTimeToFormat(date.getHours())+":"+DateTimeToFormat(date.getMinutes());
 }
 
+function getUserCredentials(dto,lname=true,sname=true){
+    const settingsRaw=localStorage.getItem('userSettings');
+    let result=dto.login;
+    if(settingsRaw){
+        const settings=JSON.parse(settingsRaw);
+        const keys=Object.keys(settingUsernameDisplay);
+        keys.forEach(key=> {
+            if (settings.userDisplay === key && key==='FULLNAME') {
+                try {
+                    result=(lname ? dto.lastname + ' ' : '') + dto.firstname +(sname ? ' ' +  dto.surname : '');
+                } catch (e) {
+                    console.error(e);
+                    showInfoMessage("Ошибка обработки имени пользователя");
+                }
+            }
+        });
+    }
+    return result;
+}
+
 function DateTimeToFormat(dateortime){
     if(dateortime.toString().length===1){
         return "0"+dateortime;

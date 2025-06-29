@@ -2,6 +2,7 @@ package com.diplom.diplom.service.videocalls;
 
 import com.diplom.diplom.configuration.userdetails.DiplomUserDetails;
 import com.diplom.diplom.dto.DTOMessageVideocall;
+import com.diplom.diplom.dto.converter.ConverterVideocallsHasUserToVideocallsHasUser;
 import com.diplom.diplom.entity.*;
 import com.diplom.diplom.exception.AccessException;
 import com.diplom.diplom.misc.utils.Parser;
@@ -56,7 +57,7 @@ public class ServiceVideocallsChat {
                 message.getId(),
                 message.getMessage(),
                 message.getDate(),
-                message.getVideocalluserId(),
+                ConverterVideocallsHasUserToVideocallsHasUser.convertEntityToDTO(message.getVideocalluserId()),
                 replyToUser!=null ? replyToUser.getVideocalluserId().getId() : null,
                 replyToUser!=null ? replyToUser.getVideocalluserId().getLogin() : null
         );
