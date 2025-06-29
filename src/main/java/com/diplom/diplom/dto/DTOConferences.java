@@ -30,6 +30,16 @@ public class DTOConferences {
         this.createdby = createdby;
     }
 
+    public DTOConferences(Long id, String name, LocalDateTime datestart, LocalDateTime dateend, Integer repeatable, EntSubject subjectId, DTOUserUpdate createdby) {
+        this.id = id;
+        this.name = name;
+        this.datestart = datestart;
+        this.dateend = dateend;
+        this.repeatable = repeatable;
+        this.subjectId = subjectId;
+        this.createdby = createdby;
+    }
+
     public Long getId() {
         return id;
     }

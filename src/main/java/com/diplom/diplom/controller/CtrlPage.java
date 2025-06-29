@@ -133,13 +133,12 @@ public class CtrlPage {
 
     @GetMapping(path = "/journal")
     public String getJournalPageForUser(@AuthenticationPrincipal DiplomUserDetails userDetails, Model model) throws EntityException {
-        String username=Objects.requireNonNull(userDetails).getUsername();
         List<EntJournal> journalList=null;
         String userrole=null;
         List<EntSubject> subjects=null;
         userrole= Parser.parseUserRole(userDetails);
         if (userrole.equals("ROLE_STUDENT")) {
-            EntUser user = srvUser.getUserByUsername(username);
+            EntUser user = userDetails.getUser();
             journalList = srvJournal.getAllJournalForUserByName(user.getFirstname());
         } else if(userrole.equals("ROLE_TEACHER") || userrole.equals("ROLE_ADMIN")){
             List<EntGroup> groups=srvGroup.getGroups();
