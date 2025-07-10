@@ -1050,6 +1050,7 @@ function publishOwnFeed(videoroomHandle,user_id) {
         })
         .catch(function (err) {
             showInfoMessage("Ошибка доступа к медиа-устройствам");
+            throw Error("NO AVAILABLE DEVICES FOUND");
         });
 
     function setupPushToTalk(sender, track,user_id ){
