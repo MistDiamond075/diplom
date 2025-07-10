@@ -985,25 +985,24 @@ function connectToKeyloggerWebsocket(keys,sender,track,user_id){
 }
 
 function publishOwnFeed(videoroomHandle,user_id) {
-    navigator.mediaDevices.enumerateDevices()
-        .then(function (devices) {
-            const hasAudio = devices.some(device => device.kind === 'audioinput');
-            const hasVideo = devices.some(device => device.kind === 'videoinput');
-
+    const constraints = {
+        audio: true,
+        video: {frameRate: 30}
+    };
             if (!hasAudio && !hasVideo) {
                 showInfoMessage("Нет доступных устройств");
                 return;
             }
 
-            const constraints = {
-                audio: true,
-                video: {frameRate: 30}
-            };
-
             return navigator.mediaDevices.getUserMedia(constraints)
                 .then(function (stream) {
                     localMediaStream = stream;
                     Janus.attachMediaStream(document.getElementById("video_display_own"), stream);
+
+                    navigator.mediaDevices.enumerateDevices()
+                        .then(function (devices) {
+                            const hasAudio = devices.some(device => device.kind === 'audioinput');
+                            const hasVideo = devices.some(device => device.kind === 'videoinput');
 
                     let sender = null;
                     let audioLevel = 40;
@@ -1015,7 +1014,7 @@ function publishOwnFeed(videoroomHandle,user_id) {
                             videoRecv: false,
                             audioSend: hasAudio,
                             videoSend: true,
-                            video: hasVideo ? {frameRate: 30} : false
+                            video: {frameRate: 30}
                         },
                         stream: stream,
                         success: function (jsep) {
