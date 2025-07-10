@@ -102,30 +102,28 @@ public class CtrlPage {
     }
 
     @GetMapping(path ="/profile")
-    public String getProfilepage(@RequestParam(value = "id",required = false) Long userId,@AuthenticationPrincipal UserDetails userDetails, Model model) throws EntityException {
-        String username=Objects.requireNonNull(userDetails).getUsername();
-        EntUser user=userId!=null ? srvUser.getOtherUserProfile(userId) : srvUser.getUserByUsername(Objects.requireNonNull(username));
+    public String getProfilepage(@RequestParam(value = "id",required = false) Long userId,@AuthenticationPrincipal DiplomUserDetails userDetails, Model model) throws EntityException {
+        EntUser user=(userId!=null && !userId.equals(userDetails.getUser().getId())) ? srvUser.getOtherUserProfile(userId) : srvUser.getUserByUsername(userDetails.getUsername());
         String groupNames=null;
         model.addAttribute("user",user);
         if(user!=null) {
             List<EntRole> roleList=user.getRoles();
-            String userroles="";
+            StringBuilder userroles= new StringBuilder();
             for(EntRole role:roleList){
                 String rolename=role.getName();
-                userroles+=rolename.substring(rolename.indexOf("ROLE_")+5)+",";
+                userroles.append(rolename.substring(rolename.indexOf("ROLE_") + 5)).append(",");
             }
-            userroles=userroles.substring(0,userroles.length()-1);
+            userroles = new StringBuilder(userroles.substring(0, userroles.length() - 1));
             List<EntGroup> groups=user.getGroups();
             groupNames = groups.stream()
                     .map(EntGroup::getName)
                     .collect(Collectors.joining(", "));
-            model.addAttribute("userroles", userroles);
+            model.addAttribute("userroles", userroles.toString());
         }else{
             model.addAttribute("userroles",null);
         }
         List<EntGroup> groupsAll=srvGroup.getGroups();
-        boolean ownProfile=userId!=null;
-        model.addAttribute("ownProfile",ownProfile);
+        model.addAttribute("ownProfile", userId == null || userId.equals(userDetails.getUser().getId()));
         model.addAttribute("groupNames", groupNames);
         model.addAttribute("groups", groupsAll);
         return "profilepage";
