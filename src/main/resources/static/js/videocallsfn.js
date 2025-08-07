@@ -985,44 +985,44 @@ function connectToKeyloggerWebsocket(keys,sender,track,user_id){
 }
 
 function publishOwnFeed(videoroomHandle,user_id) {
-    const constraints = {
-        audio: true,
-        video: {frameRate: 30}
-    };
+    navigator.mediaDevices.enumerateDevices()
+        .then(function (devices) {
+            const hasAudio = devices.some(device => device.kind === 'audioinput');
+            const hasVideo = devices.some(device => device.kind === 'videoinput');
+
+            if (!hasAudio && !hasVideo) {
+                showInfoMessage("Нет доступных устройств");
+                throw new Error("NO AVAILABLE DEVICES FOUND");
+            }
+
+            const constraints = {
+                audio: hasAudio,
+                video: hasVideo ? { frameRate: 30 } : false
+            };
 
             return navigator.mediaDevices.getUserMedia(constraints)
                 .then(function (stream) {
                     localMediaStream = stream;
                     Janus.attachMediaStream(document.getElementById("video_display_own"), stream);
 
-                    navigator.mediaDevices.enumerateDevices()
-                        .then(function (devices) {
-                            const hasAudio = devices.some(device => device.kind === 'audioinput');
-                            const hasVideo = devices.some(device => device.kind === 'videoinput');
-                            if (!hasAudio && !hasVideo) {
-                                showInfoMessage("Нет доступных устройств");
-                                throw Error("NO AVAILABLE DEVICES FOUND");
-                            }
-
-                    let sender = null;
-                    let audioLevel = 40;
                     const audioTrack = stream.getAudioTracks()[0];
-
+                    const sender = null;
+                    const audioLevel = 40;
+                    console.warn('video enabled: '+hasVideo+'\taudio enabled:'+hasAudio);
                     videoroomHandle.createOffer({
                         media: {
                             audioRecv: false,
                             videoRecv: false,
-                            audioSend: true,
+                            audioSend: hasAudio,
                             videoSend: hasVideo,
-                            video: {frameRate: 30}
+                            video: hasVideo ? { frameRate: 30 } : false
                         },
                         stream: stream,
                         success: function (jsep) {
-                            //jsep.sdp = preferCodec(jsep.sdp, 'H264');
                             const publish = {
                                 request: "publish",
                                 audio: hasAudio,
-                                video: true,
+                                video: hasVideo,
                                 audio_level_event: hasAudio,
                                 active_active_packets: 2,
                                 audio_level_average: audioLevel
@@ -1034,9 +1034,9 @@ function publishOwnFeed(videoroomHandle,user_id) {
 
                             setTimeout(() => {
                                 const pc = videoroomHandle.webrtcStuff.pc;
-                                sender = pc.getSenders().find(s => s.track && s.track.kind === 'audio');
+                                const sender = pc.getSenders().find(s => s.track && s.track.kind === 'audio');
                                 if (sender) {
-                                    if (setupPushToTalk(sender, audioTrack,user_id)) {
+                                    if (setupPushToTalk(sender, audioTrack, user_id)) {
                                         sender.replaceTrack(null);
                                     }
                                 }
@@ -1049,8 +1049,8 @@ function publishOwnFeed(videoroomHandle,user_id) {
                 });
         })
         .catch(function (err) {
-            showInfoMessage("Ошибка доступа к медиа-устройствам");
-            throw Error("NO AVAILABLE DEVICES FOUND");
+            showInfoMessage("Ошибка доступа к медиа-устройствам: " + err.message);
+            throw new Error("NO AVAILABLE DEVICES FOUND");
         });
 
     function setupPushToTalk(sender, track,user_id ){
