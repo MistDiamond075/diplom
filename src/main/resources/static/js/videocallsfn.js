@@ -1403,7 +1403,7 @@ function replaceDisplayStreams(promise,videoroomHandle,camera){
         .catch(err => {
             console.error(camera,err);
             showInfoMessage("Ошибка при получении экрана");
-            updateDemonstrationState();
+           // updateDemonstrationState();
            // ScreenSharing(videoroomHandle,false);
         });
 
