@@ -1323,7 +1323,6 @@ function ScreenSharing(videoroomHandle,start) {
             .catch(err => {
                 console.error("Ошибка при старте демонстрации:", err);
                 showInfoMessage("Ошибка при получении экрана и микрофона: " + err.message);
-                updateDemonstrationState();
             });
     }else {
         replaceDisplayStreams(navigator.mediaDevices.getUserMedia({
