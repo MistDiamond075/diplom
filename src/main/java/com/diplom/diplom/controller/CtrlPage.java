@@ -166,9 +166,9 @@ public class CtrlPage {
     }
 
     @GetMapping(path = "/tasks")
-    public String getTaskspage(@AuthenticationPrincipal DiplomUserDetails userDetails, Model model) {
+    public String getTaskspage(@AuthenticationPrincipal DiplomUserDetails userDetails, Model model) throws EntityException {
         List<EntTasks> taskList = new ArrayList<>(1);
-        EntUser user = userDetails.getUser();
+        EntUser user = srvUser.getUserByUsername(userDetails.getUsername());
         String userrole = Parser.parseUserRole(userDetails);
         if (userrole.equals("ROLE_STUDENT")) {
             List<EntGroup> group = user.getGroups();
