@@ -1318,13 +1318,13 @@ function ScreenSharing(videoroomHandle,start) {
                 });
 
                 replaceDisplayStreams(Promise.resolve(displayStream), videoroomHandle, false);
+                isDemonstrationActive=true;
             })
             .catch(err => {
                 console.error("Ошибка при старте демонстрации:", err);
                 showInfoMessage("Ошибка при получении экрана и микрофона: " + err.message);
                 updateDemonstrationState();
             });
-        isDemonstrationActive=true;
     }else {
         replaceDisplayStreams(navigator.mediaDevices.getUserMedia({
             video: true,
