@@ -1298,8 +1298,8 @@ function switchToFullscreen(elementId){
 }
 
 function ScreenSharing(videoroomHandle,start) {
-    if(start) {
-        Promise.all([
+    function startScreenWithAudioMix() {
+        return Promise.all([
             navigator.mediaDevices.getDisplayMedia({
                 video: {
                     frameRate: { ideal: 30, max: 50 },
@@ -1308,29 +1308,63 @@ function ScreenSharing(videoroomHandle,start) {
                 },
                 audio: true
             }),
-            navigator.mediaDevices.getUserMedia({
-                audio: true
-            })
+            navigator.mediaDevices.getUserMedia({ audio: true })
         ])
             .then(([displayStream, micStream]) => {
-                micStream.getAudioTracks().forEach(track => {
-                    displayStream.addTrack(track);
-                });
+                const audioContext = new AudioContext();
+                const destination = audioContext.createMediaStreamDestination();
 
-                replaceDisplayStreams(Promise.resolve(displayStream), videoroomHandle, false);
-                isDemonstrationActive=true;
+                const micSource = audioContext.createMediaStreamSource(micStream);
+                micSource.connect(destination);
+
+                const sysAudioTracks = displayStream.getAudioTracks();
+                if (sysAudioTracks.length > 0) {
+                    const sysStream = new MediaStream([sysAudioTracks[0]]);
+                    const sysSource = audioContext.createMediaStreamSource(sysStream);
+                    sysSource.connect(destination);
+                }
+
+                return new MediaStream([
+                    ...displayStream.getVideoTracks(),
+                    ...destination.stream.getAudioTracks()
+                ]);
+            });
+    }
+
+    function hasCamera() {
+        return navigator.mediaDevices.enumerateDevices()
+            .then(devices => {
+                return devices.some(device => device.kind === 'videoinput');
+            });
+    }
+
+    if(start) {
+        startScreenWithAudioMix()
+            .then((stream) => {
+                replaceDisplayStreams(Promise.resolve(stream), videoroomHandle, false);
+                isDemonstrationActive = true;
             })
-            .catch(err => {
-                console.error("Ошибка при старте демонстрации:", err);
-                showInfoMessage("Ошибка при получении экрана и микрофона: " + err.message);
+            .catch((err) => {
+                console.error("Ошибка при старте демонстрации с миксом звука:", err);
+                showInfoMessage("Ошибка: " + err.message);
             });
     }else {
-        replaceDisplayStreams(navigator.mediaDevices.getUserMedia({
-            video: true,
-            audio: true
-        }), videoroomHandle, true);
-        isDemonstrationActive=false;
-        updateCameraState(defaultStates.OFF)
+        hasCamera().then(hasCam => {
+            const constraints = {
+                audio: true,
+                video: hasCam
+            };
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(stream => {
+                    replaceDisplayStreams(Promise.resolve(stream), videoroomHandle, true);
+                    isDemonstrationActive = false;
+                    updateCameraState(defaultStates.OFF);
+                })
+                .catch(err => {
+                    console.error("Ошибка при получении камеры/микрофона:", err);
+                    showInfoMessage("Ошибка: " + err.message);
+                });
+        });
     }
 }
 
@@ -1399,8 +1433,7 @@ function replaceDisplayStreams(promise,videoroomHandle,camera){
             console.log("🛑 Демонстрация экрана завершена");
             updateDemonstrationState();
         };
-    })
-        .catch(err => {
+    }).catch(err => {
             console.error(camera,err);
             showInfoMessage("Ошибка при получении экрана");
            // updateDemonstrationState();
