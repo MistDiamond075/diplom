@@ -1323,7 +1323,8 @@ function ScreenSharing(videoroomHandle,start) {
                     const sysSource = audioContext.createMediaStreamSource(sysStream);
                     sysSource.connect(destination);
                 }
-
+                console.log("displayStream audioTracks:", displayStream.getAudioTracks());
+                console.log("micStream audioTracks:", micStream.getAudioTracks());
                 return new MediaStream([
                     ...displayStream.getVideoTracks(),
                     ...destination.stream.getAudioTracks()
@@ -1429,10 +1430,12 @@ function replaceDisplayStreams(promise,videoroomHandle,camera){
             }
         }
         console.log(camera);
-        screenTrack.onended = () => {
-            console.log("🛑 Демонстрация экрана завершена");
-            updateDemonstrationState();
-        };
+        if(screenTrack) {
+            screenTrack.onended = () => {
+                console.log("🛑 Демонстрация экрана завершена");
+                updateDemonstrationState();
+            };
+        }
     }).catch(err => {
             console.error(camera,err);
             showInfoMessage("Ошибка при получении экрана");
