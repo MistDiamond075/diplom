@@ -1026,6 +1026,7 @@ function publishOwnFeed(videoroomHandle,user_id) {
 
                             setTimeout(() => {
                                 const pc = videoroomHandle.webrtcStuff.pc;
+                                pc.addTransceiver("video", { direction: "sendrecv" });
                                 const sender = pc.getSenders().find(s => s.track && s.track.kind === 'audio');
                                 if (sender) {
                                     if (setupPushToTalk(sender, audioTrack, user_id)) {
@@ -1365,8 +1366,34 @@ function replaceDisplayStreams(promise,videoroomHandle,camera){
             || senders.find(sender => sender.track === null);
         const audioSender = senders.find(sender => sender.track && sender.track.kind === "audio");
         if (videoSender) {
+
+            const wasNullTrack = !videoSender.track;
+
             videoSender.replaceTrack(screenTrack).then(() => {
                 console.log("Видео заменено на демонстрацию экрана");
+
+                if (wasNullTrack) {
+                    console.log("Sender был пустой — делаем renegotiation");
+                    videoroomHandle.createOffer({
+                        media: {
+                            audioRecv: false,
+                            videoRecv: false,
+                            audioSend: true,
+                            videoSend: true
+                        },
+                        success: function(jsep) {
+                            videoroomHandle.send({
+                                message: {
+                                    request: "configure",
+                                    audio: true,
+                                    video: true
+                                },
+                                jsep: jsep
+                            });
+                        }
+                    });
+                }
+
                 const maxBitrate=6000000;
                 const bitrate=getAllDemonstrators();
                 videoroomHandle.send({
