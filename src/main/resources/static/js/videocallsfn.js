@@ -976,6 +976,19 @@ function connectToKeyloggerWebsocket(keys,sender,track,user_id){
     }
 }
 
+function createDummyVideoTrack() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 640;
+    canvas.height = 480;
+
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "black";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+
+    const stream = canvas.captureStream(1);
+    return stream.getVideoTracks()[0];
+}
+
 function publishOwnFeed(videoroomHandle,user_id) {
     navigator.mediaDevices.enumerateDevices()
         .then(function (devices) {
@@ -994,6 +1007,12 @@ function publishOwnFeed(videoroomHandle,user_id) {
 
             return navigator.mediaDevices.getUserMedia(constraints)
                 .then(function (stream) {
+                    if (!hasVideo) {
+                        console.warn("No camera found → creating dummy video track");
+
+                        const dummyTrack = createDummyVideoTrack();
+                        stream.addTrack(dummyTrack);
+                    }
                     localMediaStream = stream;
                     Janus.attachMediaStream(document.getElementById("video_display_own"), stream);
 
