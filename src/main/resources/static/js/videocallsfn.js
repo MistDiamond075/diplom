@@ -1033,7 +1033,7 @@ function publishOwnFeed(videoroomHandle,user_id) {
                             audioSend: hasAudio,
                             videoSend: true,
                             addVideo: true,
-                            video: { frameRate: 30 } // hasVideo ? { frameRate: 30 } : false
+                            video: true//{ frameRate: 30 } // hasVideo ? { frameRate: 30 } : false
                         },
                         stream: stream,
                         success: function (jsep) {
