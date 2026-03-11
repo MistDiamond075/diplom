@@ -1022,20 +1022,19 @@ function publishOwnFeed(videoroomHandle,user_id) {
                     Janus.attachMediaStream(document.getElementById("video_display_own"), stream);
 
                     const audioTrack = stream.getAudioTracks()[0];
-                    const sender = null;
+                    //const sender = null;
                     const audioLevel = 40;
                     console.warn('video enabled: '+hasVideo+'\taudio enabled:'+hasAudio);
                     console.log("STREAM TRACKS:", stream.getTracks());
                     videoroomHandle.createOffer({
+                        tracks: [
+                            { type: "audio", capture: stream.getAudioTracks()[0] },
+                            { type: "video", capture: stream.getVideoTracks()[0] }
+                        ],
                         media: {
                             audioRecv: false,
-                            videoRecv: false,
-                            audioSend: hasAudio,
-                            videoSend: true,
-                            addVideo: true,
-                            //video: true//{ frameRate: 30 } // hasVideo ? { frameRate: 30 } : false
+                            videoRecv: false
                         },
-                        stream: stream,
                         success: function (jsep) {
                             const publish = {
                                 request: "publish",
