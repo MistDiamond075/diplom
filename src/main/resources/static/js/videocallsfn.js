@@ -1484,7 +1484,7 @@ function ScreenSharing(videoroomHandle,start) {
         startScreenWithAudioMix()
             .then((stream) => {
                 //replaceDisplayStreams(Promise.resolve(stream), videoroomHandle, false);
-                publishScreenWithSafeReplace(videoroomHandle, Promise.resolve(stream)).then(res => {
+                publishScreenWithSafeReplace(videoroomHandle, stream).then(res => {
                     console.log('screen published result', res);
                 }).catch(err => {
                     console.error('failed to publish screen', err);
@@ -1504,7 +1504,7 @@ function ScreenSharing(videoroomHandle,start) {
             navigator.mediaDevices.getUserMedia(constraints)
                 .then(stream => {
                     //replaceDisplayStreams(Promise.resolve(stream), videoroomHandle, true);
-                    publishScreenWithSafeReplace(videoroomHandle, Promise.resolve(stream)).then(res => {
+                    publishScreenWithSafeReplace(videoroomHandle, stream).then(res => {
                         console.log('screen published result', res);
                     }).catch(err => {
                         console.error('failed to publish screen', err);
