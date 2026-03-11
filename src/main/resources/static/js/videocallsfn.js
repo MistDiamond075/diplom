@@ -11,6 +11,7 @@ let ws;
 let wsKeylogger=null;
 let window_count=0;
 let contentwindow_aspectratio=new Map();
+var debugHandle;
 const timeoutFeeds=new Map();
 const activeFeeds=new Set();
 const max_active_feeds=1;
@@ -35,7 +36,7 @@ function isStringDefaultStates(str){
 }
 
 function parseDefaultStateFromString(str){
-    if(str.toString().includes('muted')){
+    if(str.toString() === 'muted'){
         str=str+'_by_admin';
     }
     for(let item in defaultStates){
@@ -657,6 +658,7 @@ function startJanus(roomId, username, opaqueId, serverUrl,microstate=defaultStat
                 opaqueId: opaqueId,
                 success: function (pluginHandle) {
                     videoroomHandle = pluginHandle;
+                    debugHandle = pluginHandle;
                     const register = {
                         request: "join",
                         room: roomId,
@@ -844,16 +846,6 @@ function startJanus(roomId, username, opaqueId, serverUrl,microstate=defaultStat
     }
 }
 
-function getCallerFunctionName() {
-    const stack = new Error().stack?.split('\n');
-    if (stack && stack.length >= 3) {
-        const callerLine = stack[3]; // 0:Error, 1:this function, 2:called, 3:caller
-        const match = callerLine.match(/at (\w+)/);
-        return match ? match[1] : 'anonymous';
-    }
-    return 'unknown';
-}
-
 function toggleVideo(feedId, visible) {
     console.log(getCallerFunctionName());
     const handle = subscriberHandle.get(feedId);
@@ -984,6 +976,161 @@ function connectToKeyloggerWebsocket(keys,sender,track,user_id){
     }
 }
 
+function hasVideoTransceiver(pc) {
+    if (!pc || typeof pc.getTransceivers !== 'function') return false;
+    return pc.getTransceivers().some(t =>
+        (t.kind && t.kind === 'video') ||
+        (t.sender && t.sender.track && t.sender.track.kind === 'video') ||
+        (t.receiver && t.receiver.track && t.receiver.track.kind === 'video')
+    );
+}
+
+function findVideoTransceiver(pc) {
+    if (!pc || typeof pc.getTransceivers !== 'function') return null;
+    return pc.getTransceivers().find(t =>
+        (t.kind && t.kind === 'video') ||
+        (t.sender && t.sender.track && t.sender.track.kind === 'video') ||
+        (t.receiver && t.receiver.track && t.receiver.track.kind === 'video')
+    ) || null;
+}
+
+function waitForVideoTransceiver(pc, timeoutMs = 3000, pollInterval = 150) {
+    return new Promise((resolve, reject) => {
+        const start = Date.now();
+        (function poll() {
+            if (hasVideoTransceiver(pc)) return resolve(true);
+            if (Date.now() - start > timeoutMs) return reject(new Error('timeout waiting for video transceiver'));
+            setTimeout(poll, pollInterval);
+        })();
+    });
+}
+
+function ensureVideoTransceiverAndRenegotiate(videoroomHandle, opts = { audioSend: true, videoSend: true, waitTimeout: 3000 }) {
+    return new Promise((resolve, reject) => {
+        const pc = videoroomHandle?.webrtcStuff?.pc;
+        if (!pc) return reject(new Error('PC not found'));
+
+        if (hasVideoTransceiver(pc)) return resolve({ created: false });
+
+        // попытка addTransceiver
+        try {
+            if (typeof pc.addTransceiver === 'function') {
+                try {
+                    pc.addTransceiver('video', { direction: 'sendrecv' });
+                } catch (e) {
+                    console.warn('addTransceiver threw', e);
+                }
+            } else {
+                console.warn('addTransceiver not supported by this browser');
+            }
+        } catch (e) {
+            console.warn('addTransceiver error', e);
+        }
+
+        // Создаём offer через Janus (renegotiation)
+        const media = {
+            audioRecv: false,
+            videoRecv: false,
+            audioSend: !!opts.audioSend,
+            videoSend: !!opts.videoSend
+        };
+
+        videoroomHandle.createOffer({
+            media,
+            success: function (jsep) {
+                const publish = { request: "configure", audio: !!opts.audioSend, video: !!opts.videoSend };
+                try {
+                    videoroomHandle.send({ message: publish, jsep: jsep });
+                    // Ждём устойчивого состояния трансивера — либо через polling, либо через hook.
+                    waitForVideoTransceiver(pc, opts.waitTimeout || 3000)
+                        .then(() => resolve({ created: true }))
+                        .catch((err) => {
+                            // Если polling не подтвердил, но Janus мог применить SDP — всё равно резолвим,
+                            // caller будет пробовать replace и в случае неудачи выполнит fallback.
+                            console.warn('waitForVideoTransceiver timed out:', err);
+                            resolve({ created: true, warning: 'wait timeout' });
+                        });
+                } catch (e) {
+                    console.error('videoroomHandle.send failed', e);
+                    reject(e);
+                }
+            },
+            error: function (err) {
+                console.error('createOffer (reneg) error', err);
+                reject(err);
+            }
+        });
+    });
+}
+
+async function publishScreenWithSafeReplace(videoroomHandle, screenStream) {
+    const pc = videoroomHandle?.webrtcStuff?.pc;
+    if (!pc) throw new Error('PC not available');
+
+    const screenTrack = screenStream.getVideoTracks()[0];
+    if (!screenTrack) throw new Error('no screen track');
+
+    // 1) ensure transceiver & renegotiate if needed
+    try {
+        await ensureVideoTransceiverAndRenegotiate(videoroomHandle, { audioSend: true, videoSend: true, waitTimeout: 3000 });
+    } catch (e) {
+        console.warn('ensureVideoTransceiverAndRenegotiate failed (continuing to attempt replace/add):', e);
+    }
+
+    // 2) try find appropriate sender
+    let videoSender = null;
+    const trans = findVideoTransceiver(pc);
+    if (trans && trans.sender) videoSender = trans.sender;
+    if (!videoSender) {
+        // поиск sender с реальным видео-треком (на случай, если трансивер уже с треком)
+        videoSender = pc.getSenders().find(s => s.track && s.track.kind === 'video') || null;
+    }
+
+    // 3) если есть sender и он видеосендер — replaceTrack
+    if (videoSender) {
+        // дополнительная проверка: если sender.track!==null — убедимся, что kind совпадает или track==null
+        const senderKind = videoSender.track ? videoSender.track.kind : null;
+        if (senderKind === 'video' || senderKind === null) {
+            try {
+                await videoSender.replaceTrack(screenTrack);
+                console.log('replaceTrack OK');
+                return;
+            } catch (err) {
+                console.warn('replaceTrack failed:', err);
+                // fallthrough to addTrack+renegotiate
+            }
+        }
+    }
+
+    // 4) fallback: addTrack + renegotiate
+    try {
+        pc.addTrack(screenTrack, screenStream);
+    } catch (e) {
+        console.warn('pc.addTrack failed (may already be added):', e);
+    }
+
+    return new Promise((resolve, reject) => {
+        videoroomHandle.createOffer({
+            media: { audioRecv: false, videoRecv: false, audioSend: true, videoSend: true },
+            success: function (jsep) {
+                const publish = { request: "configure", audio: true, video: true };
+                try {
+                    videoroomHandle.send({ message: publish, jsep: jsep });
+                    // optional: wait for some time or waitForVideoTransceiver
+                    waitForVideoTransceiver(pc, 3000).then(() => resolve({ renegotiated: true })).catch(() => resolve({ renegotiated: true, warning: 'timeout' }));
+                } catch (e) {
+                    console.error('send configure failed', e);
+                    reject(e);
+                }
+            },
+            error: function (err) {
+                console.error('reneg createOffer failed', err);
+                reject(err);
+            }
+        });
+    });
+}
+
 function publishOwnFeed(videoroomHandle,user_id) {
     navigator.mediaDevices.enumerateDevices()
         .then(function (devices) {
@@ -1014,7 +1161,7 @@ function publishOwnFeed(videoroomHandle,user_id) {
                             audioRecv: false,
                             videoRecv: false,
                             audioSend: hasAudio,
-                            videoSend: hasVideo,
+                            videoSend: true,
                             video: hasVideo ? { frameRate: 30 } : false
                         },
                         stream: stream,
@@ -1057,14 +1204,8 @@ function publishOwnFeed(videoroomHandle,user_id) {
         try {
             const settings = JSON.parse(localStorage.getItem('userSettings'));
             const k = Object.keys(settingVoiceDetection);
-            let isEnabled = false;
-            k.forEach(key => {
-                if (settings.voiceMode === key && !isEnabled) {
-                    isEnabled = true;
-                }
-            });
-            if (!isEnabled) {
-                return isEnabled;
+            if(settings.voiceMode !== 'PUSH_TO_TALK'){
+                return false;
             }
             const keys = Array.from(settings.keysPushToTalk);
             if (keys.length === 0) {
@@ -1342,7 +1483,12 @@ function ScreenSharing(videoroomHandle,start) {
     if(start) {
         startScreenWithAudioMix()
             .then((stream) => {
-                replaceDisplayStreams(Promise.resolve(stream), videoroomHandle, false);
+                //replaceDisplayStreams(Promise.resolve(stream), videoroomHandle, false);
+                publishScreenWithSafeReplace(videoroomHandle, Promise.resolve(stream)).then(res => {
+                    console.log('screen published result', res);
+                }).catch(err => {
+                    console.error('failed to publish screen', err);
+                });
                 isDemonstrationActive = true;
             })
             .catch((err) => {
@@ -1357,7 +1503,12 @@ function ScreenSharing(videoroomHandle,start) {
             };
             navigator.mediaDevices.getUserMedia(constraints)
                 .then(stream => {
-                    replaceDisplayStreams(Promise.resolve(stream), videoroomHandle, true);
+                    //replaceDisplayStreams(Promise.resolve(stream), videoroomHandle, true);
+                    publishScreenWithSafeReplace(videoroomHandle, Promise.resolve(stream)).then(res => {
+                        console.log('screen published result', res);
+                    }).catch(err => {
+                        console.error('failed to publish screen', err);
+                    });
                     isDemonstrationActive = false;
                     updateCameraState(defaultStates.OFF);
                 })

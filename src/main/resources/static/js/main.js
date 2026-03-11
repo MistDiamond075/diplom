@@ -8,6 +8,16 @@ class Pair{
     }
 }
 
+function getCallerFunctionName() {
+    const stack = new Error().stack?.split('\n');
+    if (stack && stack.length >= 3) {
+        const callerLine = stack[3]; // 0:Error, 1:this function, 2:called, 3:caller
+        const match = callerLine.match(/at (\w+)/);
+        return match ? match[1] : 'anonymous';
+    }
+    return 'unknown';
+}
+
 function redirectToUserProfile(id=null){
     window.location.href='/profile'+(id!==null ? '?'+new URLSearchParams({id:id}) : '');
 }
