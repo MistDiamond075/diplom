@@ -1378,8 +1378,8 @@ function replaceDisplayStreams(promise,videoroomHandle,camera){
                         media: {
                             audioRecv: false,
                             videoRecv: false,
-                            audioSend: true,
-                            videoSend: true
+                            replaceAudio: true,
+                            replaceVideo: true
                         },
                         success: function(jsep) {
                             videoroomHandle.send({
