@@ -1021,7 +1021,7 @@ function publishOwnFeed(videoroomHandle,user_id) {
                     const audioLevel = 40;
                     console.warn('video enabled: '+hasVideo+'\taudio enabled:'+hasAudio);
                     if (!hasVideo) {
-                        videoroomHandle.webrtcStuff.pc.addTransceiver("video",{direction:"sendrecv"});
+                        //videoroomHandle.webrtcStuff.pc.addTransceiver("video",{direction:"sendrecv"});
                     }
                    // videoroomHandle.webrtcStuff.pc.addTransceiver("video", { direction: "sendrecv" });
                     videoroomHandle.createOffer({
