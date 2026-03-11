@@ -1016,7 +1016,7 @@ function publishOwnFeed(videoroomHandle,user_id) {
                             const publish = {
                                 request: "publish",
                                 audio: hasAudio,
-                                video: hasVideo,
+                                video: true,
                                 audio_level_event: hasAudio,
                                 active_active_packets: 2,
                                 audio_level_average: audioLevel
