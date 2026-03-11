@@ -1025,10 +1025,7 @@ function publishOwnFeed(videoroomHandle,user_id) {
                     const sender = null;
                     const audioLevel = 40;
                     console.warn('video enabled: '+hasVideo+'\taudio enabled:'+hasAudio);
-                    if (!hasVideo) {
-                        //videoroomHandle.webrtcStuff.pc.addTransceiver("video",{direction:"sendrecv"});
-                    }
-                   // videoroomHandle.webrtcStuff.pc.addTransceiver("video", { direction: "sendrecv" });
+                    console.log("STREAM TRACKS:", stream.getTracks());
                     videoroomHandle.createOffer({
                         media: {
                             audioRecv: false,
