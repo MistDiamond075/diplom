@@ -1026,7 +1026,7 @@ function publishOwnFeed(videoroomHandle,user_id) {
 
                             setTimeout(() => {
                                 const pc = videoroomHandle.webrtcStuff.pc;
-                                pc.addTransceiver("video", { direction: "sendrecv" });
+                               // pc.addTransceiver("video", { direction: "sendrecv" });
                                 const sender = pc.getSenders().find(s => s.track && s.track.kind === 'audio');
                                 if (sender) {
                                     if (setupPushToTalk(sender, audioTrack, user_id)) {
