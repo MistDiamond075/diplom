@@ -1011,7 +1011,12 @@ function publishOwnFeed(videoroomHandle,user_id) {
                         console.warn("No camera found → creating dummy video track");
 
                         const dummyTrack = createDummyVideoTrack();
-                        stream.addTrack(dummyTrack);
+
+                        const newStream = new MediaStream();
+                        stream.getTracks().forEach(t => newStream.addTrack(t));
+                        newStream.addTrack(dummyTrack);
+
+                        stream = newStream;
                     }
                     localMediaStream = stream;
                     Janus.attachMediaStream(document.getElementById("video_display_own"), stream);
