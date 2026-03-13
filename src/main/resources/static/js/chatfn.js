@@ -175,36 +175,30 @@ function loadChatData(chatId,page=0){
 }
 
 function observeLazyElement(element) {
-    // 1. Создаем наблюдатель
+    console.log(element);
     const observer = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
-            // 2. Проверяем, виден ли элемент пользователю
             if (entry.isIntersecting) {
                 const lazyElement = entry.target;
-
-                // 3. Берем ссылку из data-src и переносим в настоящий src
+                console.log(lazyElement);
                 const src = lazyElement.getAttribute('data-src');
                 if (src) {
                     lazyElement.src = src;
                 }
 
-                // 4. (Опционально) Для видео/аудио вызываем загрузку
                 if (lazyElement.tagName === 'VIDEO' || lazyElement.tagName === 'AUDIO') {
                     lazyElement.load();
                 }
 
-                // 5. Убираем класс 'lazy' (если есть) и перестаем следить
                 lazyElement.classList.add('loaded');
                 observer.unobserve(lazyElement); 
             }
         });
     }, {
-        // Настройки: начинать загрузку за 100px до того, как элемент появится
         rootMargin: '0px 0px 100px 0px',
         threshold: 0.01
     });
 
-    // Запускаем наблюдение за конкретным элементом
     observer.observe(element);
 }
 
