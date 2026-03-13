@@ -75,7 +75,7 @@ public class ServiceChatFiles {
        }
 
         HttpHeaders headers = new HttpHeaders();
-        headers.add("X-Accel-Redirect", "/chats/" + file.getPath());
+        headers.add("X-Accel-Redirect", "/" + file.getPath());
         headers.add(HttpHeaders.CONTENT_DISPOSITION,
                 "inline; filename=\"" + Path.of(file.getPath()).getFileName() + "\"");
 
