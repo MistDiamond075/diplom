@@ -175,12 +175,13 @@ function loadChatData(chatId,page=0){
 }
 
 function observeLazyElement(element) {
-    console.log(element);
+    //console.log(element);
+    const chatContainer = document.querySelector('.messages-list');
     const observer = new IntersectionObserver((entries, observer) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
                 const lazyElement = entry.target;
-                console.log(lazyElement);
+              //  console.log(lazyElement);
                 const src = lazyElement.getAttribute('data-src');
                 if (src) {
                     lazyElement.src = src;
@@ -195,6 +196,7 @@ function observeLazyElement(element) {
             }
         });
     }, {
+        root: chatContainer,
         rootMargin: '0px 0px 200px 0px',
         threshold: 0.01
     });
