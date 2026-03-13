@@ -49,7 +49,7 @@ function parseDefaultStateFromString(str){
 }
 
 function connectToVideocallWs(room_id,user_id,videoroomHandle) {
-    const ws_addr = "wss://192.168.0.102:60600";//"wss://5.189.10.253:60600";//"wss://192.168.0.106:60600";
+    const ws_addr = "wss://5.189.10.253:60600";//"wss://192.168.0.106:60600";
     ws = new WebSocket(ws_addr);
     console.log('server WS started');
 
