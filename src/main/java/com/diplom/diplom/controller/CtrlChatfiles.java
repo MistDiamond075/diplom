@@ -30,7 +30,7 @@ public class CtrlChatfiles {
     }
 
     @GetMapping("/chats/{chatId}/message/{msgId}/file/{id}/view")
-    public ResponseEntity<Resource> getFile(@PathVariable Long id,@AuthenticationPrincipal DiplomUserDetails userDetails) throws EntityException, AccessException {
+    public ResponseEntity<Void> getFile(@PathVariable Long id,@AuthenticationPrincipal DiplomUserDetails userDetails) throws EntityException, AccessException {
         return srvChatFiles.getFileForView(id,userDetails);
     }
 

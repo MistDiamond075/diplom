@@ -11,6 +11,8 @@ import com.diplom.diplom.exception.EntityException;
 import com.diplom.diplom.misc.utils.factory.FactoryChatUser;
 import com.diplom.diplom.repository.*;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -30,6 +32,7 @@ public class ServiceChat {
     private final RepSubject rSubject;
     private final RepUser rUser;
     private final RepGroup rGroup;
+    private static final Logger logger = LoggerFactory.getLogger(ServiceChat.class.getName());
 
     @Autowired
     public ServiceChat(RepChat rChat, RepChatUser rChatUser, RepSubject rSubject, RepUser rUser, RepGroup rGroup) {
@@ -294,7 +297,7 @@ public class ServiceChat {
                                         EntUser.class
                                 ));
                     } catch (EntityException e) {
-                        System.err.println(e.getDescription());
+                        logger.error(e.toString());
                         throw new RuntimeException(e);
                     }
                     return FactoryChatUser.createDefault(chat, entUser);

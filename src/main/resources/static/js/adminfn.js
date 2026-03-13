@@ -94,7 +94,7 @@ function sendBan(action,id=null){
     if(form) {
         const reason=document.getElementById('banform_reason').value;
         const datenow = new Date();
-        const start=DateTimeToFormat(datenow.getFullYear())+'-'+DateTimeToFormat(datenow.getMonth())+'-'+DateTimeToFormat(datenow.getDate())+' '+DateTimeToFormat(datenow.getHours())+':'+DateTimeToFormat(datenow.getMinutes());
+        const start=formatLeadingZero(datenow.getFullYear())+'-'+formatLeadingZero(datenow.getMonth())+'-'+formatLeadingZero(datenow.getDate())+' '+formatLeadingZero(datenow.getHours())+':'+formatLeadingZero(datenow.getMinutes());
         const end=document.getElementById('banform_end').value;
         const userId=document.getElementById('banform_user').value;
         const ip=document.getElementById('banform_address').value;

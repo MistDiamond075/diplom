@@ -5,6 +5,8 @@ import org.java_websocket.drafts.Draft_6455;
 import org.java_websocket.handshake.ServerHandshake;
 import org.java_websocket.protocols.Protocol;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -17,9 +19,9 @@ import java.util.function.Consumer;
 
 public class WebSocketJanus extends WebSocketClient {
     private final Map<String, CompletableFuture<JSONObject>> queueTransactions = new ConcurrentHashMap<>();
-    private final List<Consumer<JSONObject>> eventListeners = new CopyOnWriteArrayList<>();
     private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
     private boolean connected=false;
+    private static Logger logger = LoggerFactory.getLogger(WebSocketJanus.class.getName());
 
     public WebSocketJanus(String serverUri) throws URISyntaxException {
         super(
@@ -39,23 +41,6 @@ public class WebSocketJanus extends WebSocketClient {
         return future.orTimeout(5, TimeUnit.SECONDS);
     }
 
-    public CompletableFuture<JSONObject> waitForEvent(long sessionId, long handleId) {
-        CompletableFuture<JSONObject> future = new CompletableFuture<>();
-        Consumer<JSONObject> listener = new Consumer<>() {
-            @Override
-            public void accept(JSONObject event) {
-                if ("event".equals(event.optString("janus"))
-                        && event.optLong("session_id") == sessionId
-                        && event.optLong("sender") == handleId) {
-                    eventListeners.remove(this);
-                    future.complete(event);
-                }
-            }
-        };
-        eventListeners.add(listener);
-        return future.orTimeout(15, TimeUnit.SECONDS);
-    }
-
     public boolean isConnected() {
         return connected;
     }
@@ -69,7 +54,7 @@ public class WebSocketJanus extends WebSocketClient {
                         .put("transaction", UUID.randomUUID().toString());
                 this.send(keepAlive.toString());
             } catch (Exception e) {
-                System.err.println("Failed to send keepalive "+sessionId+": " + e.getMessage());
+                logger.error("Failed to send keepalive {}: {}", sessionId, e.getMessage());
                 scheduler.shutdownNow();
             }
         }, 0, 30, TimeUnit.SECONDS);
@@ -81,7 +66,7 @@ public class WebSocketJanus extends WebSocketClient {
 
     @Override
     public void onOpen(ServerHandshake serverHandshake) {
-        System.out.println("WebSocketJanus connected");
+        logger.info("WebSocketJanus connected");
         connected=true;
     }
 
@@ -95,20 +80,17 @@ public class WebSocketJanus extends WebSocketClient {
                 future.complete(response);
             }
         }
-        for (Consumer<JSONObject> listener : eventListeners) {
-            listener.accept(response);
-        }
     }
 
     @Override
     public void onClose(int code, String reason, boolean b) {
-        System.out.println("WebSocketJanus closed with code "+code+": " + reason);
+        logger.info("WebSocketJanus closed with code {}: {}", code, reason);
         connected=false;
     }
 
     @Override
     public void onError(Exception e) {
-        System.err.println("WebSocketJanus error: " + e.getMessage());
+        logger.error("WebSocketJanus error: {}", e.getMessage());
         connected=false;
     }
 }

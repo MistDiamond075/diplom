@@ -1,5 +1,5 @@
 *{
-    font-family: "Lucida Console";/* "Courier New"; "OCR A Becker RUS-LAT",*/
+    font-family: "ocra";/* "Courier New"; "OCR A Becker RUS-LAT",Lucida Console*/
 }
 body{
     background-color: #222222;
@@ -17,8 +17,7 @@ a{
     text-decoration: inherit;
 }
 .form-input{
-    color: #e3e3e3;
-    font-weight: bold;
+    color: #fde101;
     border-style: double;
     border-color: #717171;
     background: #414141 !important;
@@ -34,7 +33,7 @@ a{
     position: fixed;
     z-index: 1;
     width: fit-content;
-    height: 1em;
+    height: 20px;
     color: black;
     background: #609B01;
     text-decoration: none;
@@ -49,13 +48,17 @@ a{
     border-style: solid;
     border-width: 1px;
     border-color: black;
-    padding-left: 2px;
-    padding-right: 2px;
     display: flex;
-    width: 8vh;
+    width: 90px;
+    font-size: 15px;
     height: 100%;
     align-items: flex-end;
     justify-content: flex-start;
+}
+.overlaybutton a{
+    width: 100%;
+    text-align: center;
+    line-height: 23px;
 }
 .overlaybutton a:hover{
     font-weight: bold;
@@ -213,6 +216,11 @@ a{
 }
 .exit-profile-buttons-zone{
     align-self: end;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: row;
+    gap: 30px;
 }
 .exit-profile-buttons-zone button{
     width: 10vh;
@@ -305,4 +313,35 @@ a{
 .setting-element:hover{
     background: #009100;
     color: white;
+}
+
+@font-face {
+    font-family: 'cornerita';
+    src: url('/files/fonts/Cornerita Regular.ttf');
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'cornerita';
+    src: url('/files/fonts/Cornerita Bold.ttf');
+    font-weight: bold;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'mt-sans';
+    src: url('/files/fonts/MTSans-RegularCondensed.ttf');
+    font-weight: normal;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'cornerita';
+    src: url('/files/fonts/MTSans-Bold.ttf');
+    font-weight: bold;
+    font-style: normal;
+}
+@font-face {
+    font-family: 'ocra';
+    src: url('/files/fonts/ocra(RUS BY LYAJKA).ttf');
+    font-weight: normal;
+    font-style: normal;
 }

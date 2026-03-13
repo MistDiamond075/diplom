@@ -1,5 +1,8 @@
 HELP.md
 target/
+main/files/tasks
+main/files/tasks_completed
+main/files/chats
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/

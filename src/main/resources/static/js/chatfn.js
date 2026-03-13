@@ -179,15 +179,15 @@ function addMessageToChat(msg,replyTo){
     const userId=Number(document.getElementById('user_id').value);
     if(!document.getElementById('message_'+msg.id)){
         const date=new Date(msg.date);
-        let dateDiv=document.getElementById('date_separator_'+DateTimeToFormat(date.getDate())+'_'+DateTimeToFormat(date.getMonth()+1)+'_'+DateTimeToFormat(date.getFullYear()));
+        let dateDiv=document.getElementById('date_separator_'+formatDateTime(date,'dd_MM_yyyy'));
         if(!dateDiv){
             dateDiv=document.createElement('div');
             dateDiv.className='date-separator-container';
-            dateDiv.id='date_separator_'+DateTimeToFormat(date.getDate())+'_'+DateTimeToFormat(date.getMonth()+1)+'_'+DateTimeToFormat(date.getFullYear());
+            dateDiv.id='date_separator_'+formatDateTime(date,'dd_MM_yyyy');
             container.appendChild(dateDiv);
             const span=document.createElement('span');
             span.className='date-separator';
-            span.innerText=DateTimeToFormat(date.getDate())+'.'+DateTimeToFormat(date.getMonth()+1)+'.'+DateTimeToFormat(date.getFullYear());
+            span.innerText=formatDateTime(date,'E,dd.MM.yyyy');
             dateDiv.appendChild(span);
         }
         const div=document.createElement('div');
@@ -204,7 +204,7 @@ function addMessageToChat(msg,replyTo){
         div3.appendChild(div2);
         const span_time=document.createElement('span');
         span_time.className='chat-message-time';
-        span_time.innerText=DateTimeToFormat(date.getHours())+':'+DateTimeToFormat(date.getMinutes())+' ';
+        span_time.innerText=formatDateTime(date,'hh:mm:ss ');
         const span_name=document.createElement('span');
         span_name.className='chat-message-username';
         span_name.style['color']=generateNameColor('#2e2e2e');
@@ -236,10 +236,12 @@ function addMessageToChat(msg,replyTo){
                     case 'image':{
                         docFile=document.createElement('img');
                         docFile.setAttribute('data-src',file.href);
+                        docFile.setAttribute('loading','lazy');
                     break;}
                     case 'video':{
                         docFile.setAttribute('data-src', file.href);
                         docFile.setAttribute('controls','true');
+                        docFile.setAttribute('preload','metadata');
                     break;}
                     case 'audio':{
                         docFile.setAttribute('data-src', file.href);
@@ -291,6 +293,10 @@ function sendMessageToChat(chatId=null){
         }
         const files=Array.from(document.getElementById('message_files').files);
         const text = document.getElementById('message_input').value;
+        if(text.length===0){
+
+            return;
+        }
         const senddata = {
             text: text
         };

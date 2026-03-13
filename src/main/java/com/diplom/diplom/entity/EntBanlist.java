@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.persistence.*;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Table(name = "banlist",schema = "db_diplom")
@@ -96,5 +97,31 @@ public class EntBanlist {
 
     public void setIpaddress(String ipaddress) {
         this.ipaddress = ipaddress;
+    }
+
+    @Override
+    public String toString() {
+        return "EntBanlist{" +
+                "id=" + id +
+                ", reason='" + reason + '\'' +
+                ", end=" + end +
+                ", start=" + start +
+                ", userId=" + userId +
+                ", bannedBy=" + bannedBy +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof EntBanlist that)) return false;
+        return Objects.equals(id, that.id) &&
+                Objects.equals(ipaddress, that.ipaddress) &&
+                Objects.equals(userId, that.userId) &&
+                Objects.equals(bannedBy, that.bannedBy);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, ipaddress, userId, bannedBy);
     }
 }

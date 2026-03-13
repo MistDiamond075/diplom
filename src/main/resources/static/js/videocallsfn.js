@@ -49,7 +49,7 @@ function parseDefaultStateFromString(str){
 }
 
 function connectToVideocallWs(room_id,user_id,videoroomHandle) {
-    const ws_addr = "wss://5.189.10.253:60600";//"wss://192.168.0.106:60600";
+    const ws_addr = "wss://192.168.0.102:60600";//"wss://5.189.10.253:60600";//"wss://192.168.0.106:60600";
     ws = new WebSocket(ws_addr);
     console.log('server WS started');
 
@@ -430,7 +430,7 @@ function createSettingsBlock(container,participant) {
             const span_time=document.createElement('span');
             span_time.className='chat-message-time';
             const date=new Date(msg.timestamp);
-            span_time.innerText=DateTimeToFormat(date.getHours())+':'+DateTimeToFormat(date.getMinutes())+' ';
+            span_time.innerText=formatLeadingZero(date.getHours())+':'+formatLeadingZero(date.getMinutes())+' ';
             const span_name=document.createElement('span');
             span_name.className='chat-message-username';
             span_name.style['color']=generateNameColor('#2e2e2e');

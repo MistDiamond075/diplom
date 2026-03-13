@@ -14,11 +14,13 @@ import com.diplom.diplom.repository.RepChatMessage;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,7 +57,7 @@ public class ServiceChatFiles {
         return !fileList.isEmpty() ? new ArrayList<>(fileList.stream().map(ConverterFileToEntityFile::convertChatFileToDTOFile).toList()) : new ArrayList<>();
     }
 
-    public ResponseEntity<Resource> getFileForView(Long id,DiplomUserDetails userDetails) throws EntityException, AccessException {
+    public ResponseEntity<Void> getFileForView(Long id,DiplomUserDetails userDetails) throws EntityException, AccessException {
         EntUser user=userDetails.getUser();
         EntChatfiles file=rChatFiles.findById(id).orElseThrow(()->new EntityException(
                 HttpStatus.NOT_FOUND,
@@ -71,7 +73,14 @@ public class ServiceChatFiles {
                    userDetails
            );
        }
-        return FilesProcessor.getFileResource(file.getPath(), null);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("X-Accel-Redirect", "/chats/" + file.getPath());
+        headers.add(HttpHeaders.CONTENT_DISPOSITION,
+                "inline; filename=\"" + Path.of(file.getPath()).getFileName() + "\"");
+
+        return new ResponseEntity<>(headers, HttpStatus.OK);
+        //return FilesProcessor.getFileResource(file.getPath(), null);
     }
 
     @Transactional

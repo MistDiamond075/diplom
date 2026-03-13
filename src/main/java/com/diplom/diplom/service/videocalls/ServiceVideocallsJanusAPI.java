@@ -6,6 +6,8 @@ import com.diplom.diplom.exception.JanusAPIException;
 import com.diplom.diplom.misc.Websocket.janus.WebSocketJanus;
 import com.diplom.diplom.misc.Websocket.WebSocketManager;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,7 @@ import java.util.concurrent.ExecutionException;
 public class ServiceVideocallsJanusAPI {
     private final ConfUrls appurls;
     private final WebSocketManager wsManager;
+    private static final Logger logger = LoggerFactory.getLogger(ServiceVideocallsJanusAPI.class.getName());
 
     @Autowired
     public ServiceVideocallsJanusAPI(ConfUrls appurls, WebSocketManager wsManager) {
@@ -95,12 +98,11 @@ public class ServiceVideocallsJanusAPI {
                 .put("body",body);
         JSONObject destroyResponse=ws.sendRequest(destroy).get();
         if(destroyResponse.optString("janus").equals("error")){
-            System.err.println("in destroy in room delete request");
-            System.err.println(destroyResponse);
+            logger.error("in destroy in room delete request: {}",destroyResponse);
             throw new JanusAPIException(HttpStatus.INTERNAL_SERVER_ERROR,destroyResponse.toString(),"Ошибка удаления комнаты в janus");
         }
         wsManager.unregister(videocall.getId());
-        System.out.println("connections:"+ wsManager.connectionsCount());
+        logger.info("connections:{}", wsManager.connectionsCount());
     }
 
     public boolean isWebsocketExist(EntVideocalls videocall){

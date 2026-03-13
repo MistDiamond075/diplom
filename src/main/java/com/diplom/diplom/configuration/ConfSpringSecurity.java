@@ -40,7 +40,7 @@ public class ConfSpringSecurity {
                 .csrf(csrf -> csrf.csrfTokenRepository(csrfRepo))
                 .requiresChannel(channel -> channel.anyRequest().requiresSecure())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/registrationpage/**","/login","/pwrestorepage/**","/js/**","/css/**","/files/logo.png","/files/favicon.png").permitAll()
+                        .requestMatchers("/registrationpage/**","/login","/pwrestorepage/**","/js/**","/css/**","/fonts/**","/files/logo.png","/files/favicon.png").permitAll()
                         .requestMatchers("/conference/{id}/update","/conference/create","/tasks/create","/task/{id}/update").hasAnyRole("ADMIN","TEACHER")
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/**").hasAnyRole("STUDENT","TEACHER","ADMIN")

@@ -20,13 +20,13 @@ public class CtrlException {
 
     @ExceptionHandler(BaseException.class)
     public ResponseEntity<Map<String,Object>> BaseExceptionHandler(BaseException e){
-        log.error("e: ", e);
+        log.error("e: {}", e.toString());
         return ResponseEntity.status(e.getStatus()).body(createBaseExceptionResponse(e));
     }
 
     @ExceptionHandler(EntityException.class)
     public ResponseEntity<Map<String,Object>> EntityExceptionHandler(EntityException e){
-        log.error("e: ", e);
+        log.error("e: {}", e.toString());
         return ResponseEntity.status(e.getStatus()).body(createBaseExceptionResponse(e));
     }
 
@@ -34,14 +34,14 @@ public class CtrlException {
     public ResponseEntity<Map<String,Object>> AccesExceptionHandler(AccessException e){
         Map<String,Object> resp=createBaseExceptionResponse(e);
         resp.put("role",e.getUserRole());
-        log.error("e: ", e);
+        log.error("e: {}", e.toString());
         return ResponseEntity.status(e.getStatus()).body(resp);
     }
 
     @ExceptionHandler(DataProcessingException.class)
     public ResponseEntity<Map<String,Object>> DataProcessingHandler(DataProcessingException e){
         Map<String,Object> resp=createBaseExceptionResponse(e);
-        log.error("e: ", e);
+        log.error("e: {}", e.toString());
         return ResponseEntity.status(e.getStatus()).body(resp);
     }
 

@@ -1,0 +1,15 @@
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>
+                %clr(%d{EEEE dd MMMM yyyy HH:mm:ss VV}){bright_cyan} %clr(%5p) %clr([%15.15t]){faint} %clr(%-40.40logger{39}){bright_yellow} %clr(:){faint} %m%n
+            </pattern>
+
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+</configuration>

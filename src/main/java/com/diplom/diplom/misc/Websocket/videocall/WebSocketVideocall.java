@@ -6,6 +6,8 @@ import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
 import org.java_websocket.server.WebSocketServer;
 import org.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
@@ -30,6 +32,7 @@ public class WebSocketVideocall extends WebSocketServer {
     private static final int maxPongMisses = 3;
     private static ServiceVideocalls srvVideocallsHasUser;
     private static ServiceVideocallsAsync srvVideocallsAsync;
+    private static Logger logger= LoggerFactory.getLogger(WebSocketVideocall.class.getName());
 
     public WebSocketVideocall(int port) {
         super(new InetSocketAddress(port));
@@ -82,6 +85,9 @@ public class WebSocketVideocall extends WebSocketServer {
     public static void broadcastParticipant(Long room_id,Long user_id,String participantJson) {
         if(room_id!=null && user_id!=null) {
             ConcurrentHashMap<Long,WebSocket> connections=roomId_connections.get(room_id);
+            if(connections==null) {
+                return;
+            }
             WebSocket conn=connections.get(user_id);
             try {
                 conn.send(participantJson);
@@ -117,8 +123,8 @@ public class WebSocketVideocall extends WebSocketServer {
 
     @Override
     public void onOpen(WebSocket conn, ClientHandshake serverHandshake) {
-        String path=serverHandshake.getResourceDescriptor();
-        System.out.println("New connection: " + conn.getRemoteSocketAddress());
+       // String path=serverHandshake.getResourceDescriptor();
+        logger.info("New connection: {}", conn.getRemoteSocketAddress());
     }
 
     @Override
@@ -185,11 +191,11 @@ public class WebSocketVideocall extends WebSocketServer {
 
     @Override
     public void onClose(WebSocket conn,int code, String reason, boolean b) {
-        System.out.println("WebSocket closed with code "+code+": " + reason);
+        logger.info("WebSocket closed with code {}: {}", code, reason);
         Long userId = connectionToUserId.get(conn);
 
         if (userId == null) {
-            System.out.println("Connection was not tracked.");
+            logger.info("Connection was not tracked.");
             return;
         }
 
@@ -197,7 +203,7 @@ public class WebSocketVideocall extends WebSocketServer {
         for (Map.Entry<Long, ConcurrentHashMap<Long, WebSocket>> entry : roomId_connections.entrySet()) {
             if (entry.getValue().remove(userId) != null) {
                 found = true;
-                System.out.println("Removed user " + userId + " from conference room " + entry.getKey());
+                logger.info("Removed user {} from conference room {}", userId, entry.getKey());
                 if (entry.getValue().isEmpty()) {
                     roomId_connections.remove(entry.getKey());
                 }
@@ -210,7 +216,7 @@ public class WebSocketVideocall extends WebSocketServer {
         }
         for (Map.Entry<Long, ConcurrentHashMap<Long, WebSocket>> entry : chatId_connections.entrySet()) {
             if (entry.getValue().remove(userId) != null) {
-                System.out.println("Removed user " + userId + " from chat " + entry.getKey());
+                logger.info("Removed user {} from chat {}", userId, entry.getKey());
                 if (entry.getValue().isEmpty()) {
                     chatId_connections.remove(entry.getKey());
                 }
@@ -223,12 +229,12 @@ public class WebSocketVideocall extends WebSocketServer {
 
     @Override
     public void onError(WebSocket conn,Exception e) {
-        System.err.println("WebSocket error: " + e.getMessage());
+        logger.error("WebSocket error: {}", e.getMessage());
     }
 
     @Override
     public void onStart() {
-        System.out.println("WebSocket started");
+        logger.info("WebSocket started");
         pingScheduler.scheduleAtFixedRate(() -> {
             for (Map.Entry<Long,ConcurrentHashMap<Long,WebSocket>> conn : roomId_connections.entrySet()) {
                 for (Map.Entry<Long,WebSocket> conn2 : conn.getValue().entrySet()) {
@@ -237,7 +243,7 @@ public class WebSocketVideocall extends WebSocketServer {
                             JSONObject ping = new JSONObject().put("event", "ping").put("eventType","videocall");
                             conn2.getValue().send(ping.toString());
                         } catch (Exception e) {
-                            System.err.println("Failed to send ping to client: " + e.getMessage());
+                            logger.error("Failed to send ping to client: {}", e.getMessage());
                         }finally {
                             if(!connections_pongMisses.containsKey(conn2.getKey())) {
                                 connections_pongMisses.put(conn2.getKey(),0);

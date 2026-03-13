@@ -146,18 +146,17 @@ textarea{
     font-weight: bold;
 }
 .conf-date{
-    font-size: 0.9em;
+    font-size: 13px;
 }
 .conf-subject{
     font-style: italic;
-    font-size: 0.7em;
+    font-size: 12px;
 }
 .conf-group{
     display: block;
     font-weight: bold;
     color: #054b00;
     overflow-x: auto;
-    height: 1em;
     width:100%;
     white-space: nowrap;
     scrollbar-width: none;

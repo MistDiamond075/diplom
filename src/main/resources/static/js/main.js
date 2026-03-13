@@ -31,8 +31,8 @@ function formCharCount(input_id,counter_id){
 
 function getDateTime(){
     const date=new Date;
-    return DateTimeToFormat(date.getFullYear())+"-"+DateTimeToFormat(date.getMonth()+1)+"-"
-        +date.getDate()+" "+DateTimeToFormat(date.getHours())+":"+DateTimeToFormat(date.getMinutes());
+    return formatLeadingZero(date.getFullYear())+"-"+formatLeadingZero(date.getMonth()+1)+"-"
+        +date.getDate()+" "+formatLeadingZero(date.getHours())+":"+formatLeadingZero(date.getMinutes());
 }
 
 function getUserCredentials(dto,lname=true,sname=true){
@@ -55,11 +55,72 @@ function getUserCredentials(dto,lname=true,sname=true){
     return result;
 }
 
-function DateTimeToFormat(dateortime){
-    if(dateortime.toString().length===1){
-        return "0"+dateortime;
+function parseDayOfWeek(date,fullname=false){
+    const daysFull=['Воскресенье','Понедельник','Вторник','Среда','Четверг','Пятница','Суббота'];
+    const days=['Вс','Пн','Вт','Ср','Чт','Пт','Сб'];
+    return fullname ? daysFull[date.getDay()] : days[date.getDay()];
+}
+
+function parseMonth(date,fullname=false){
+    const monthFull=['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    const months=['Янв','Фев','Мар','Апр','Май','Июн','Июл','Авг','Сен','Окт','Ноя','Дек'];
+    return fullname ? monthFull[date.getMonth()] : months[date.getMonth()];
+}
+
+function formatDateTime(date,format){
+
+    if(format.includes('EEEE')){
+        format=format.replace('EEEE',parseDayOfWeek(date,true));
+    }else if(format.includes('E')){
+        format=format.replace('E',parseDayOfWeek(date,false));
+    }
+
+     if(format.includes('yyyy')){
+         format=format.replace('yyyy',date.getFullYear());
+    }
+
+     if(format.includes('MMMM')){
+         format=format.replace('MMMM',parseMonth(date,true));
+     }else if(format.includes('mmmm')){
+         format=format.replace('mmmm',parseMonth(date,false));
+     }else if(format.includes('MM')){
+         format=format.replace('MM',formatLeadingZero(date.getMonth()+1));
+     }else if(format.includes('M')){
+         format=format.replace('M',date.getMonth()+1);
+     }
+
+     if(format.includes('dd')){
+         format=format.replace('dd',formatLeadingZero(date.getDate()));
+     }else if(format.includes('d')){
+         format=format.replace('d',date.getDate());
+     }
+
+     if(format.includes('hh')){
+         format=format.replace('hh',formatLeadingZero(date.getHours()));
+     }else if(format.includes('h')){
+         format=format.replace('h',date.getHours());
+     }
+
+     if(format.includes('mm')){
+         format=format.replace('mm',formatLeadingZero(date.getMinutes()));
+     }else if(format.includes('m')){
+         format=format.replace('m',date.getMinutes());
+     }
+
+     if(format.includes('ss')){
+         format=format.replace('ss',formatLeadingZero(date.getSeconds()));
+     }else if(format.includes('s')){
+         format=format.replace('s',date.getSeconds());
+     }
+
+     return format;
+}
+
+function formatLeadingZero(date_or_time){
+    if(date_or_time.toString().length===1){
+        return "0"+date_or_time;
     }else{
-        return dateortime;
+        return date_or_time;
     }
 }
 
