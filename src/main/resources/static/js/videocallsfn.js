@@ -1,54 +1,54 @@
 let janus = null;
-let subscriberHandle=new Map();
+let subscriberHandle = new Map();
 let opaqueId;
 let roomId;
-let isLeaving=false;
-let isSoundMuted=false;
-let localMediaStream=null;
-let devices_start_state_updated=false;
-let isDemonstrationActive=false;
+let isLeaving = false;
+let isSoundMuted = false;
+let localMediaStream = null;
+let devices_start_state_updated = false;
+let isDemonstrationActive = false;
 let ws;
-let wsKeylogger=null;
-let window_count=0;
-let contentwindow_aspectratio=new Map();
+let wsKeylogger = null;
+let window_count = 0;
+let contentwindow_aspectratio = new Map();
 var debugHandle;
-const timeoutFeeds=new Map();
-const activeFeeds=new Set();
-const max_active_feeds=1;
-const userId_feedId=new Map;
-const feedId_userId=new Map();
-const Actions= {MICROPHONE: 'AUDIO', CAMERA:'VIDEO',BAN:'BAN',SOUND:'SOUND',DEMONSTRATION:'DEMONSTRATION'};
-const defaultStates={OFF:'OFF',ON:'ON',MUTED_BY_ADMIN:'MUTED_BY_ADMIN'};
-const iconsVideocallUrl='/files/icons/videocall';
-const sounds={
-    DEMOSTART:new Audio('/files/sound/videocall/demo_start.wav'),
-    DEMOEND:new Audio('/files/sound/videocall/demo_end.wav'),
-    VOICESTART:new Audio('/files/sound/videocall/voice_start.wav'),
-    VOICEEND:new Audio('/files/sound/videocall/voice_end.wav'),
-    JOIN:new Audio('/files/sound/videocall/join.wav'),
-    LEAVE:new Audio('/files/sound/videocall/leave.wav')
+const timeoutFeeds = new Map();
+const activeFeeds = new Set();
+const max_active_feeds = 1;
+const userId_feedId = new Map;
+const feedId_userId = new Map();
+const Actions = {MICROPHONE: 'AUDIO', CAMERA: 'VIDEO', BAN: 'BAN', SOUND: 'SOUND', DEMONSTRATION: 'DEMONSTRATION'};
+const defaultStates = {OFF: 'OFF', ON: 'ON', MUTED_BY_ADMIN: 'MUTED_BY_ADMIN'};
+const iconsVideocallUrl = '/files/icons/videocall';
+const sounds = {
+    DEMOSTART: new Audio('/files/sound/videocall/demo_start.wav'),
+    DEMOEND: new Audio('/files/sound/videocall/demo_end.wav'),
+    VOICESTART: new Audio('/files/sound/videocall/voice_start.wav'),
+    VOICEEND: new Audio('/files/sound/videocall/voice_end.wav'),
+    JOIN: new Audio('/files/sound/videocall/join.wav'),
+    LEAVE: new Audio('/files/sound/videocall/leave.wav')
 };
 
-sounds.JOIN.playbackRate=1.3;
+sounds.JOIN.playbackRate = 1.3;
 
-function isStringDefaultStates(str){
+function isStringDefaultStates(str) {
     return Object.values(defaultStates).includes(str);
 }
 
-function parseDefaultStateFromString(str){
-    if(str.toString() === 'muted'){
-        str=str+'_by_admin';
+function parseDefaultStateFromString(str) {
+    if (str.toString() === 'muted') {
+        str = `${str}_by_admin`;
     }
-    for(let item in defaultStates){
+    for (let item in defaultStates) {
         const regex = new RegExp(`(?:^|[^a-zA-Z])${item.toLowerCase()}(?:[^a-zA-Z]|$)`, 'i');
-        if(regex.test(str)){
+        if (regex.test(str)) {
             return item;
         }
     }
     return null;
 }
 
-function connectToVideocallWs(room_id,user_id,videoroomHandle) {
+function connectToVideocallWs(room_id, user_id, videoroomHandle) {
     const ws_addr = "wss://192.168.0.102:60600";//"wss://5.189.10.253:60600";//"wss://192.168.0.106:60600";
     ws = new WebSocket(ws_addr);
     console.log('server WS started');
@@ -56,7 +56,7 @@ function connectToVideocallWs(room_id,user_id,videoroomHandle) {
     ws.onopen = function () {
         const request = {
             event: "joined",
-            eventType:"videocall",
+            eventType: "videocall",
             roomId: room_id,
             userId: user_id
         };
@@ -64,7 +64,6 @@ function connectToVideocallWs(room_id,user_id,videoroomHandle) {
     }
 
     ws.onmessage = function (event) {
-        console.log('received server ws message');
         const jsdata = JSON.parse(event.data);
         console.log(jsdata);
         if (jsdata.eventType === "videocall") {
@@ -92,10 +91,7 @@ function connectToVideocallWs(room_id,user_id,videoroomHandle) {
                         unsubscribeFromPublisher(subscriberHandle.get(userId_feedId.get(jsdata.id)));
                     }
                 }
-                const element = document.getElementById('user_' + jsdata.id);
-                if (element) {
-                    element.remove();
-                }
+                document.querySelector(`#user_${jsdata.id}`)?.remove();
                 sounds.LEAVE.play();
             } else if (jsdata.event === "chatmsg") {
                 addMessageToChat(jsdata, user_id);
@@ -115,8 +111,6 @@ function connectToVideocallWs(room_id,user_id,videoroomHandle) {
                             track = localMediaStream.getVideoTracks()[0];
                             state = message.message.video;
                         }
-                        //console.log(track);
-                        // console.log(state);
                         if (track !== undefined && state !== undefined) {
                             track.enabled = state;
                         }
@@ -125,7 +119,7 @@ function connectToVideocallWs(room_id,user_id,videoroomHandle) {
                             console.log('muted');
                             isSoundMuted = jsdata.data.state !== defaultStates.ON;
                             userId_feedId.forEach(value => {
-                                const element = document.getElementById(value + '_audio');
+                                const element = document.querySelector(`#${value}_audio`);
                                 console.log(element);
                                 console.log(isSoundMuted);
                                 if (element) {
@@ -151,33 +145,30 @@ function connectToVideocallWs(room_id,user_id,videoroomHandle) {
                     }
                 } else {
                     const userId = jsdata.userId;
-                    const participant = document.getElementById('user_' + userId);
+                    const participant = document.querySelector(`#user_${userId}`);
                     console.log(userId);
                     console.log(participant);
                     if (participant) {
                         if (jsdata.data.message.video !== undefined) {
                             updateParticipantPropertiesIcons(participant, jsdata.data.state, Actions.CAMERA);
-                            if (userId_feedId.has(userId)) {
-                                //  updateUserDisplay(userId_feedId.get(userId),jsdata.data.state===defaultStates.ON);
-                            }
                             console.log(userId);
                             if (userId_feedId.has(userId)) {
-                                if(jsdata.data.state !== defaultStates.ON &&activeFeeds.has(userId_feedId.get(userId))){
+                                if (jsdata.data.state !== defaultStates.ON && activeFeeds.has(userId_feedId.get(userId))) {
                                     activeFeeds.delete(userId_feedId.get(userId));
-                                    if(activeFeeds.size<max_active_feeds){
-                                        const users=document.querySelectorAll('[class*="user-participant"]');
-                                        users.forEach(user=> {
+                                    if (activeFeeds.size < max_active_feeds) {
+                                        const users = document.querySelectorAll('[class*="user-participant"]');
+                                        users.forEach(user => {
                                             console.log(activeFeeds.size);
-                                            if(activeFeeds.size>=max_active_feeds){
+                                            if (activeFeeds.size >= max_active_feeds) {
                                                 return;
                                             }
-                                            const state=getParticipantSettingState(user,'cam');
+                                            const state = getParticipantSettingState(user, 'cam');
                                             console.log(state);
-                                            if(state!==null){
-                                                if(parseDefaultStateFromString(state)===defaultStates.ON){
-                                                    const userId=Number(user.id.substring(user.id.indexOf('_')+1));
-                                                    if(userId_feedId.has(userId)) {
-                                                        toggleVideo(userId_feedId.get(userId),true);
+                                            if (state !== null) {
+                                                if (parseDefaultStateFromString(state) === defaultStates.ON) {
+                                                    const userId = Number(user.id.substring(user.id.indexOf('_') + 1));
+                                                    if (userId_feedId.has(userId)) {
+                                                        toggleVideo(userId_feedId.get(userId), true);
                                                         activeFeeds.add(userId_feedId.get(userId));
                                                     }
                                                 }
@@ -186,8 +177,8 @@ function connectToVideocallWs(room_id,user_id,videoroomHandle) {
                                     }
                                 }
                                 if (activeFeeds.size < max_active_feeds || activeFeeds.has(userId_feedId.get(userId))) {
-                                    if(!activeFeeds.has(userId_feedId.get(userId))) {
-                                        if(jsdata.data.state === defaultStates.ON) {
+                                    if (!activeFeeds.has(userId_feedId.get(userId))) {
+                                        if (jsdata.data.state === defaultStates.ON) {
                                             activeFeeds.add(userId_feedId.get(userId));
                                         }
                                     }
@@ -201,28 +192,28 @@ function connectToVideocallWs(room_id,user_id,videoroomHandle) {
                             updateParticipantPropertiesIcons(participant, jsdata.data.state, Actions.SOUND);
                         } else if (jsdata.data.message.demonstration !== undefined) {
                             updateParticipantPropertiesIcons(participant, jsdata.data.state, Actions.DEMONSTRATION);
-                            if(jsdata.data.state === defaultStates.ON) {
+                            if (jsdata.data.state === defaultStates.ON) {
                                 sounds.DEMOSTART.play().catch(err => console.warn('Autoplay block?', err));
-                            }else if(jsdata.data.state === defaultStates.OFF){
+                            } else if (jsdata.data.state === defaultStates.OFF) {
                                 sounds.DEMOEND.play().catch(err => console.warn('Autoplay block?', err));
                             }
                             if (userId_feedId.has(userId)) {
-                                if(jsdata.data.state !== defaultStates.ON &&activeFeeds.has(userId_feedId.get(userId))){
+                                if (jsdata.data.state !== defaultStates.ON && activeFeeds.has(userId_feedId.get(userId))) {
                                     activeFeeds.delete(userId_feedId.get(userId));
-                                    if(activeFeeds.size<max_active_feeds){
-                                        const users=document.querySelectorAll('[class*="user-participant"]');
-                                        users.forEach(user=> {
+                                    if (activeFeeds.size < max_active_feeds) {
+                                        const users = document.querySelectorAll('[class*="user-participant"]');
+                                        users.forEach(user => {
                                             console.log(activeFeeds.size);
-                                            if(activeFeeds.size>=max_active_feeds){
+                                            if (activeFeeds.size >= max_active_feeds) {
                                                 return;
                                             }
-                                            const state=getParticipantSettingState(user,'cam');
+                                            const state = getParticipantSettingState(user, 'cam');
                                             console.log(state);
-                                            if(state!==null){
-                                                if(parseDefaultStateFromString(state)===defaultStates.ON){
-                                                    const userId=Number(user.id.substring(user.id.indexOf('_')+1));
-                                                    if(userId_feedId.has(userId)) {
-                                                        toggleVideo(userId_feedId.get(userId),true);
+                                            if (state !== null) {
+                                                if (parseDefaultStateFromString(state) === defaultStates.ON) {
+                                                    const userId = Number(user.id.substring(user.id.indexOf('_') + 1));
+                                                    if (userId_feedId.has(userId)) {
+                                                        toggleVideo(userId_feedId.get(userId), true);
                                                         activeFeeds.add(userId_feedId.get(userId));
                                                     }
                                                 }
@@ -231,7 +222,7 @@ function connectToVideocallWs(room_id,user_id,videoroomHandle) {
                                     }
                                 }
                                 if (activeFeeds.size < max_active_feeds || activeFeeds.has(userId_feedId.get(userId))) {
-                                    if(!activeFeeds.has(userId_feedId.get(userId))) {
+                                    if (!activeFeeds.has(userId_feedId.get(userId))) {
                                         activeFeeds.add(userId_feedId.get(userId));
                                     }
                                     console.log('TOGGLING DEMO WITH REWUEST');
@@ -248,7 +239,7 @@ function connectToVideocallWs(room_id,user_id,videoroomHandle) {
     ws.onclose = function () {
         const request = {
             event: "leave",
-            eventType:"videocall",
+            eventType: "videocall",
             roomId: room_id,
             userId: user_id
         };
@@ -256,238 +247,240 @@ function connectToVideocallWs(room_id,user_id,videoroomHandle) {
     }
 }
 
-    function createUserParticipantBlock(participant){
-        const container = document.querySelector(".user-list-zone");
-        if(!document.getElementById('user_'+participant.id)) {
-            const div1 = document.createElement("div");
-            div1.className = "user-participant";
-            div1.id = 'user_' + participant.id;
-            div1.setAttribute("name",participant.login);
-            container.appendChild(div1);
-            const div2=document.createElement('div');
-            div2.className='user-participant-desc';
-            const div3=document.createElement('div');
-            div3.className='user-participant-avatar-and-name';
-            const img = document.createElement("img");
-            img.src = "/useravatar/" + participant.id;
-            img.id='user_avatar_'+participant.id;
-            img.className = "user-participant-avatar";
-            const span = document.createElement("span");
-            span.textContent = getUserCredentials(participant);
-            div1.appendChild(div2);
-            div2.appendChild(div3);
-            div3.appendChild(img);
-            div3.appendChild(span);
-            const element=createSettingsBlock(div1,participant);
-            console.log('map has key:'+userId_feedId.has(participant.id));
-            if(userId_feedId.has(participant.id)){
-                const feedId=userId_feedId.get(participant.id);
-                const img=document.getElementById(feedId+'_image');
-                console.log(feedId);
-                if(img){
-                    console.log('adding src');
-                    img.src="/useravatar/" + participant.id;
-                }
+function createUserParticipantBlock(participant) {
+    const container = document.querySelector(".user-list-zone");
+    if (!document.querySelector(`#user_${participant.id}`)) {
+        const div1 = document.createElement("div");
+        div1.className = "user-participant";
+        div1.id = `user_${participant.id}`;
+        div1.setAttribute("name", participant.login);
+        container.appendChild(div1);
+        const div2 = document.createElement('div');
+        div2.className = 'user-participant-desc';
+        const div3 = document.createElement('div');
+        div3.className = 'user-participant-avatar-and-name';
+        const img = document.createElement("img");
+        img.src = `/useravatar/${participant.id}`;
+        img.id = `user_avatar_${participant.id}`;
+        img.className = "user-participant-avatar";
+        const span = document.createElement("span");
+        span.textContent = getUserCredentials(participant);
+        div1.appendChild(div2);
+        div2.appendChild(div3);
+        div3.appendChild(img);
+        div3.appendChild(span);
+        const element = createSettingsBlock(div1, participant);
+        console.log('map has key:' + userId_feedId.has(participant.id));
+        if (userId_feedId.has(participant.id)) {
+            const feedId = userId_feedId.get(participant.id);
+            const img = document.querySelector(`#${feedId}_image`);
+            console.log(feedId);
+            if (img) {
+                console.log('adding src');
+                img.src = `/useravatar/${participant.id}`;
             }
-            setParticipantPropertiesIcons(element,participant);
         }
-    }
-
-function setParticipantPropertiesIcons(container,participant){
-    const div=document.createElement('div');
-    div.className='user-participant-icons';
-    container.appendChild(div);
-    if(participant.microphone!==undefined){
-        createIcon('mic_',participant.microphone,div);
-    }
-    if(participant.camera!==undefined){
-        createIcon('cam_',participant.camera,div);
-    }
-    if(participant.sound!==undefined){
-        createIcon('snd_',participant.sound,div);
-    }
-    if(participant.demo!==undefined){
-        createIcon('demo_',participant.demo,div);
+        setParticipantPropertiesIcons(element, participant);
     }
 }
 
-function createIcon(className,state,container) {
-    if(state.toString().includes('MUTED')){
-        state='MUTED';
+function setParticipantPropertiesIcons(container, participant) {
+    const div = document.createElement('div');
+    div.className = 'user-participant-icons';
+    container.appendChild(div);
+    if (participant.microphone !== undefined) {
+        createIcon('mic_', participant.microphone, div);
+    }
+    if (participant.camera !== undefined) {
+        createIcon('cam_', participant.camera, div);
+    }
+    if (participant.sound !== undefined) {
+        createIcon('snd_', participant.sound, div);
+    }
+    if (participant.demo !== undefined) {
+        createIcon('demo_', participant.demo, div);
+    }
+}
+
+function createIcon(className, state, container) {
+    if (state.toString().includes('MUTED')) {
+        state = 'MUTED';
     }
     const icon = document.createElement('img');
     icon.className = 'user-participant-icon';
     icon.classList.add(className + state.toLowerCase());
-    icon.src = iconsVideocallUrl + '/' + className + state.toLowerCase() + '.png';
+    icon.src = `${iconsVideocallUrl}/${className}${state.toLowerCase()}.png`;
     container.appendChild(icon);
     return icon;
 }
 
-function updateParticipantPropertiesIcons(container,state,action){
-    if(state.toString().includes('MUTED')){
-        state='MUTED';
+function updateParticipantPropertiesIcons(container, state, action) {
+    if (state.toString().includes('MUTED')) {
+        state = 'MUTED';
     }
     //console.log(action);
-    switch (action){
-        case Actions.MICROPHONE:{
-            updateIcon('mic_',state,container);
-        break;}
-        case Actions.CAMERA:{
-            updateIcon('cam_',state,container);
-        break;}
-        case Actions.SOUND:{
-            updateIcon('snd_',state,container);
-        break;}
-        case Actions.DEMONSTRATION:{
-            updateIcon('demo_',state,container);
-        break;}
+    switch (action) {
+        case Actions.MICROPHONE: {
+            updateIcon('mic_', state, container);
+            break;
+        }
+        case Actions.CAMERA: {
+            updateIcon('cam_', state, container);
+            break;
+        }
+        case Actions.SOUND: {
+            updateIcon('snd_', state, container);
+            break;
+        }
+        case Actions.DEMONSTRATION: {
+            updateIcon('demo_', state, container);
+            break;
+        }
     }
 
-    function updateIcon(className,state,container){
+    function updateIcon(className, state, container) {
         let icon = container.querySelector(`[class*='${className}']`);
         //console.log(icon);
-        if(!icon) {
-            icon=createIcon(className,state,container.querySelector('.user-participant-icons'));
+        if (!icon) {
+            icon = createIcon(className, state, container.querySelector('.user-participant-icons'));
         }
-        icon.classList.forEach(name=>{
-            if(name.includes(className)){
+        icon.classList.forEach(name => {
+            if (name.includes(className)) {
                 icon.classList.remove(name);
             }
         });
         icon.classList.add(className + state.toLowerCase());
-        icon.src = iconsVideocallUrl + '/' + className + state.toString().toLowerCase() + '.png';
+        icon.src = `${iconsVideocallUrl}/${className}${state.toString().toLowerCase()}.png`;
     }
 }
 
-function createSettingsBlock(container,participant) {
+function createSettingsBlock(container, participant) {
     console.log(participant);
-        const actions = new Map([
-            ['Заглушить',
-                'updateRemoteMicrophone(' + participant.id + ',false,this)'],
-            [participant.microphone!==defaultStates.MUTED_BY_ADMIN ? 'Заглушить для всех' : 'Включить микрофон для всех',
-                'updateRemoteMicrophone(' + participant.id + ',true,this)'],
-            ['Отключить камеру',
-                'updateRemoteCamera(' + participant.id + ',false,this)'],
-            [participant.camera!==defaultStates.MUTED_BY_ADMIN ? 'Отключить камеру для всех' : 'Включить камеру для всех',
-                'updateRemoteCamera(' + participant.id + ',true,this)'],
-            [participant.demonstration!==defaultStates.MUTED_BY_ADMIN ? 'Запретить демонстрацию экрана' : 'Разрешить демонстрацию экрана',
-                'updateRemoteDemonstration('+participant.id+',this)'] ,
-            [participant.sound!==defaultStates.MUTED_BY_ADMIN ? 'Отключить звук' : 'Включить звук',
-                'updateRemoteSound('+participant.id+',this)'],
-            ['Выгнать', 'banUser(' + participant.id + ')']
-        ]);
+    const actions = new Map([
+        ['Заглушить',
+            `updateRemoteMicrophone(${participant.id},false,this)`],
+        [participant.microphone !== defaultStates.MUTED_BY_ADMIN ? 'Заглушить для всех' : 'Включить микрофон для всех',
+            `updateRemoteMicrophone(${participant.id},true,this)`],
+        ['Отключить камеру',
+            `updateRemoteCamera(${participant.id},false,this)`],
+        [participant.camera !== defaultStates.MUTED_BY_ADMIN ? 'Отключить камеру для всех' : 'Включить камеру для всех',
+            `updateRemoteCamera(${participant.id},true,this)`],
+        [participant.demonstration !== defaultStates.MUTED_BY_ADMIN ? 'Запретить демонстрацию экрана' : 'Разрешить демонстрацию экрана',
+            `updateRemoteDevice(${participant.id},${this},'demo',${Actions.DEMONSTRATION},'Запретить демонстрацию экрана','Разрешить демонстрацию экрана')`],
+        [participant.sound !== defaultStates.MUTED_BY_ADMIN ? 'Отключить звук' : 'Включить звук',
+            `updateRemoteDevice(${participant.id},${this},'snd',${Actions.SOUND},'Отключить звук','Включить звук')`],
+        ['Выгнать', 'banUser(' + participant.id + ')']
+    ]);
 
-        const div1 = document.createElement('div');
-        div1.style['text-align'] = 'end';
-        div1.className='user-participant-settings';
-        container.appendChild(div1);
-        const span = document.createElement('span');
-        span.id = 'button_settings_' + participant.id;
-        span.className = 'settings-btn';
-        span.setAttribute('onclick', 'showSettingsMenu(' + participant.id + ')');
-        span.innerText = '⚙️';
-        div1.appendChild(span);
-        const div2 = document.createElement('div');
-        div2.id = 'settings_' + participant.id;
-        div2.className = 'settings-block';
-        div2.style['display'] = 'none';
-        div1.appendChild(div2);
-        actions.forEach((fn, name) => {
-            const button = document.createElement('button');
-            button.type = 'button';
-            button.className = 'setting-element';
-            button.setAttribute('onclick', fn);
-            button.innerText = name;
-            div2.appendChild(button);
-        });
-        return div1;
-    }
+    const div1 = document.createElement('div');
+    div1.style['text-align'] = 'end';
+    div1.className = 'user-participant-settings';
+    container.appendChild(div1);
+    const span = document.createElement('span');
+    span.id = 'button_settings_' + participant.id;
+    span.className = 'settings-btn';
+    span.setAttribute('onclick', 'showSettingsMenu(' + participant.id + ')');
+    span.innerText = '⚙️';
+    div1.appendChild(span);
+    const div2 = document.createElement('div');
+    div2.id = 'settings_' + participant.id;
+    div2.className = 'settings-block';
+    div2.style['display'] = 'none';
+    div1.appendChild(div2);
+    actions.forEach((fn, name) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'setting-element';
+        button.setAttribute('onclick', fn);
+        button.innerText = name;
+        div2.appendChild(button);
+    });
+    return div1;
+}
 
-    function getParticipantSettingState(userContainer,settingClassName) {
-        const settingsList = userContainer.querySelector('.user-participant-icons');
-        let state=null;
-        if (settingsList) {
-            settingsList.childNodes.forEach(setting => {
-                const list=setting.classList;
-                list.forEach(clname => {
-                   // console.log(clname,clname.toString().includes(settingClassName));
-                    if (clname.toString().includes(settingClassName)) {
-                        state=clname.substring(clname.indexOf('_')+1);
-                    }
-                });
-            });
-        }
-        return state;
-    }
-
-    function addMessageToChat(msg,userId){
-        const container=document.querySelector('.chat-block');
-        if(!document.getElementById('message_'+msg.id)){
-            const div=document.createElement('div');
-            div.id='message_'+msg.id;
-            div.className='chat-message';
-            container.appendChild(div);
-            const span_time=document.createElement('span');
-            span_time.className='chat-message-time';
-            const date=new Date(msg.timestamp);
-            span_time.innerText=formatLeadingZero(date.getHours())+':'+formatLeadingZero(date.getMinutes())+' ';
-            const span_name=document.createElement('span');
-            span_name.className='chat-message-username';
-            span_name.style['color']=generateNameColor('#2e2e2e');
-            span_name.innerText=getUserCredentials(msg)+': ';
-            div.appendChild(span_time);
-            div.appendChild(span_name);
-            const span_text=document.createElement('span');
-            span_text.className='chat-message-text';
-            let messageText=msg.text;
-            if(msg.replyToId!==null && msg.replyToName!==null) {
-                console.log(msg.replyToId === userId);
-                if (msg.replyToId === userId) {
-                    const userName=msg.replyToName;
-                    const bgcolor= '#16b919';
-                    const textcolor= 'black';
-                    console.log(messageText);
-                    const pattern=new RegExp(`@${userName}\\b`, 'gi');
-                    messageText = messageText.toString().replace(pattern,`<span style="background:${bgcolor};color:${textcolor};padding: 1px;font-weight: bold;border-radius: 3px">@${userName}</span>`);
-                    console.log(messageText);
-                }
+function getParticipantSettingState(userContainer, settingClassName) {
+    const settingsList = userContainer.querySelector('.user-participant-icons');
+    let state = null;
+    settingsList?.childNodes.forEach(setting => {
+        const list = setting.classList;
+        list.forEach(clname => {
+            // console.log(clname,clname.toString().includes(settingClassName));
+            if (clname.toString().includes(settingClassName)) {
+                state = clname.substring(clname.indexOf('_') + 1);
             }
-            span_text.innerHTML = messageText;
-            div.appendChild(span_text);
-        }
-    }
+        });
+    });
+    return state;
+}
 
-function updateUserSettings(status,action,self,userId=null){
+function addMessageToChat(msg, userId) {
+    const container = document.querySelector('.chat-block');
+    if (!document.querySelector(`#message_${msg.id}`)) {
+        const div = document.createElement('div');
+        div.id = 'message_' + msg.id;
+        div.className = 'chat-message';
+        container.appendChild(div);
+        const span_time = document.createElement('span');
+        span_time.className = 'chat-message-time';
+        const date = new Date(msg.timestamp);
+        span_time.innerText = formatLeadingZero(date.getHours()) + ':' + formatLeadingZero(date.getMinutes()) + ' ';
+        const span_name = document.createElement('span');
+        span_name.className = 'chat-message-username';
+        span_name.style['color'] = generateNameColor('#2e2e2e');
+        span_name.innerText = getUserCredentials(msg) + ': ';
+        div.appendChild(span_time);
+        div.appendChild(span_name);
+        const span_text = document.createElement('span');
+        span_text.className = 'chat-message-text';
+        let messageText = msg.text;
+        if (msg.replyToId !== null && msg.replyToName !== null) {
+            console.log(msg.replyToId === userId);
+            if (msg.replyToId === userId) {
+                const userName = msg.replyToName;
+                const bgcolor = '#16b919';
+                const textcolor = 'black';
+                console.log(messageText);
+                const pattern = new RegExp(`@${userName}\\b`, 'gi');
+                messageText = messageText.toString().replace(pattern, `<span style="background:${bgcolor};color:${textcolor};padding: 1px;font-weight: bold;border-radius: 3px">@${userName}</span>`);
+                console.log(messageText);
+            }
+        }
+        span_text.innerHTML = messageText;
+        div.appendChild(span_text);
+    }
+}
+
+function updateUserSettings(status, action, self, userId = null) {
     let state;
-    console.log('status: '+status,isStringDefaultStates(status));
-    if(isStringDefaultStates(status)){
-      state=status;
-    }else {
+    console.log('status: ' + status, isStringDefaultStates(status));
+    if (isStringDefaultStates(status)) {
+        state = status;
+    } else {
         state = status !== null ? (status ? 'ON' : 'OFF') : status;
     }
-    let url=window.location.href+'/user/update?';
-    const searchParams=new URLSearchParams({action:action.toUpperCase(),self:self});
-    if(userId!==null){
-        searchParams.append('userUpdatedId',userId);
+    let url = window.location.href + '/user/update?';
+    const searchParams = new URLSearchParams({action: action.toUpperCase(), self: self});
+    if (userId !== null) {
+        searchParams.append('userUpdatedId', userId);
     }
-    if(state!==null){
-        searchParams.append('state',state);
+    if (state !== null) {
+        searchParams.append('state', state);
     }
-    url+=searchParams;
+    url += searchParams;
     console.log(url);
-    fetch(url,{
-        method:'post',
-        headers:{[csrfHeader]: csrfToken}
-    }).then(response =>{
-        if(!response.ok){
-            let js=response.json();
-            js.then(msg=> showInfoMessage(msg.message));
+    fetch(url, {
+        method: 'post',
+        headers: {[csrfHeader]: csrfToken}
+    }).then(response => {
+        if (!response.ok) {
+            let js = response.json();
+            js.then(msg => showInfoMessage(msg.message));
             return;
         }
         return response.json();
-    }).then(data =>{
+    }).then(data => {
         console.log(data);
-        if(self) {
+        if (self) {
             if (data) {
                 isSoundMuted = data !== 'ON';
             }
@@ -495,69 +488,63 @@ function updateUserSettings(status,action,self,userId=null){
     });
 }
 
-function setControlButtonIcon(state,id){
-    const element=document.getElementById(id);
-   // console.log(element);
-    if(!element){
+function setControlButtonIcon(state, id) {
+    const element = document.querySelector(`#${id}`);
+    if (!element) {
         return;
     }
-    if(state==='ON'){
-        element.classList.remove('videocall-setting-button-off');
-        element.classList.add('videocall-setting-button-on');
-    }else{
-        element.classList.remove("videocall-setting-button-on");
-        element.classList.add('videocall-setting-button-off');
+    element.classList.remove(state === 'ON' ? 'videocall-setting-button-off' : "videocall-setting-button-on");
+    element.classList.add(state === 'ON' ? 'videocall-setting-button-on' : 'videocall-setting-button-off');
+    if (state.toString().includes('MUTED')) {
+        state = 'MUTED';
     }
-    if(state.toString().includes('MUTED')){
-        state='MUTED';
-    }
-    element.classList.forEach(name =>{
-        if(name.includes(id)){
+    element.classList.forEach(name => {
+        if (name.includes(id)) {
             element.classList.remove(name);
         }
     });
-    element.classList.add(id+'-'+state.toString().toLowerCase());
+    element.classList.add(id + '-' + state.toString().toLowerCase());
 }
 
-function lightUser(feedId,state){
-    if(feedId_userId.has(feedId)) {
+function lightUser(feedId, state) {
+    if (feedId_userId.has(feedId)) {
         const userId = feedId_userId.get(feedId);
-        const userBlock=document.getElementById('user_'+userId);
-        if(userBlock){
-            userBlock.style['border-color']=state ? '#43db06' : '#304926';
+        const userBlock = document.querySelector(`#user_${userId}`);
+        if (userBlock) {
+            userBlock.style['border-color'] = state ? '#43db06' : '#304926';
         }
     }
 }
 
-function sendMessageToChat(){
-    const text=document.getElementById('message_input').value;
-    if(text==='' || !text){
+function sendMessageToChat() {
+    const text = document.querySelector('#message_input').value;
+    if (text === '' || !text) {
         console.error('message cannot be empty');
     }
-    let replyTo=null;
-    if(text.includes("@")){
-        const name=text.substring(text.indexOf('@')+1,text.indexOf(' ',text.indexOf('@')+1));
+    let replyTo = null;
+    if (text.includes("@")) {
+        const name = text.substring(text.indexOf('@') + 1, text.indexOf(' ', text.indexOf('@') + 1));
         console.log(name);
-        const users=document.querySelectorAll('.user-participant');
-        users.forEach(user=>{
+        const users = document.querySelectorAll('.user-participant');
+        users.forEach(user => {
             console.log(user);
-            if(user.getAttribute('name').toString().includes(name)){
-                replyTo=user.id.substring(user.id.indexOf('_')+1);
+            if (user.getAttribute('name').toString().includes(name)) {
+                replyTo = user.id.substring(user.id.indexOf('_') + 1);
             }
         });
     }
-    const senddate={
-        text:text,
-        replyTo:replyTo
+    const senddate = {
+        text: text,
+        replyTo: replyTo
     };
-    fetch(window.location.href+'/addMessage',{
-        method:'post',
-        headers:{'Content-Type':'application/json',[csrfHeader]: csrfToken},
-        body:JSON.stringify(senddate)
+    fetch(window.location.href + '/addMessage', {
+        method: 'post',
+        headers: {'Content-Type': 'application/json', [csrfHeader]: csrfToken},
+        body: JSON.stringify(senddate)
     }).then(response => {
         if (!response.ok) {
-            let js=response.json();
-            js.then(msg=> showInfoMessage(msg.message))
+            let js = response.json();
+            js.then(msg => showInfoMessage(msg.message))
             return;
         } else {
             console.log('done');
@@ -565,7 +552,7 @@ function sendMessageToChat(){
         return response.json();
     }).then(data => {
         console.log(data);
-        document.getElementById('message_input').value='';
+        document.querySelector('#message_input').value = '';
     });
 }
 
@@ -578,7 +565,7 @@ function join() {
 
     createDialogWindow().then(function (confirmed) {
         if (!confirmed) {
-            window.location.href='/conferences';
+            window.location.href = '/conferences';
             return;
         }
 
@@ -613,14 +600,14 @@ function join() {
             camerastate = data.camstate;
             console.log(data);
             opaqueId = 'videoroom-' + roomId;
-            if(!devices_start_state_updated){
-                setControlButtonIcon(data.soundstate,'soundstate');
-                setControlButtonIcon(data.demostate,'demostate');
-                setControlButtonIcon(microstate,'microstate');
-                setControlButtonIcon(camerastate,'camstate');
+            if (!devices_start_state_updated) {
+                setControlButtonIcon(data.soundstate, 'soundstate');
+                setControlButtonIcon(data.demostate, 'demostate');
+                setControlButtonIcon(microstate, 'microstate');
+                setControlButtonIcon(camerastate, 'camstate');
             }
             Janus.init({
-                debug: "all",
+              //  debug: "all",
                 callback: function () {
                     startJanus(roomId, username, opaqueId, serverUrl, parseDefaultStateFromString(microstate), parseDefaultStateFromString(camerastate), user_id);
                 }
@@ -630,7 +617,7 @@ function join() {
     }
 }
 
-function startJanus(roomId, username, opaqueId, serverUrl,microstate=defaultStates.OFF,camerastate=defaultStates.OFF,user_id) {
+function startJanus(roomId, username, opaqueId, serverUrl, microstate = defaultStates.OFF, camerastate = defaultStates.OFF, user_id) {
     let videoroomHandle;
     let ownFeedId;
 
@@ -680,37 +667,37 @@ function startJanus(roomId, username, opaqueId, serverUrl,microstate=defaultStat
                                 return;
                             }*/
 
-                            if (publishers.length === 0) {
-                                publishOwnFeed(videoroomHandle,user_id);
-                            } else {
-                                for (let i = 0; i < publishers.length; i++) {
-                                    const publisher = publishers[i];
-                                    const display = publisher.display;
-                                    if (publisher.id !== ownFeedId) {
-                                        console.log("👤 Новый участник:", display + ' ' + publisher.id);
-                                        userId_feedId.set(Number(publisher.display), publisher.id);
-                                        feedId_userId.set(publisher.id, Number(publisher.display));
-                                        console.log(publisher.id, activeFeeds.size);
-                                        if (activeFeeds.size < max_active_feeds || activeFeeds.has(publisher.id)) {
-                                            console.log('TOGGLING VIDEO ' + publisher.id);
-                                            subscribeToPublisher(publisher.id, true);
-                                            activeFeeds.add(publisher.id);
-                                        } else {
-                                            subscribeToPublisher(publisher.id, false);
-                                        }
+                        if (publishers.length === 0) {
+                            publishOwnFeed(videoroomHandle, user_id);
+                        } else {
+                            for (let i = 0; i < publishers.length; i++) {
+                                const publisher = publishers[i];
+                                const display = publisher.display;
+                                if (publisher.id !== ownFeedId) {
+                                    console.log("👤 Новый участник:", display + ' ' + publisher.id);
+                                    userId_feedId.set(Number(publisher.display), publisher.id);
+                                    feedId_userId.set(publisher.id, Number(publisher.display));
+                                    console.log(publisher.id, activeFeeds.size);
+                                    if (activeFeeds.size < max_active_feeds || activeFeeds.has(publisher.id)) {
+                                        console.log('TOGGLING VIDEO ' + publisher.id);
+                                        subscribeToPublisher(publisher.id, true);
+                                        activeFeeds.add(publisher.id);
+                                    } else {
+                                        subscribeToPublisher(publisher.id, false);
                                     }
                                 }
-                                publishOwnFeed(videoroomHandle);
                             }
-                       // });
+                            publishOwnFeed(videoroomHandle);
+                        }
+                        // });
                     }
 
                     if (msg.videoroom === "talking") {
                         const talkingFeedId = msg.id;
-                        if(talkingFeedId===ownFeedId){
+                        if (talkingFeedId === ownFeedId) {
                             return;
                         }
-                        if(activeFeeds.size>=max_active_feeds) {
+                        if (activeFeeds.size >= max_active_feeds) {
                             let oldest = null;
                             for (const [id, entry] of Object.entries(activeFeeds)) {
                                 if (!oldest || entry.date < oldest.date) {
@@ -718,13 +705,13 @@ function startJanus(roomId, username, opaqueId, serverUrl,microstate=defaultStat
                                 }
                             }
                             if (oldest !== null) {
-                                toggleVideo(talkingFeedId,false);
+                                toggleVideo(talkingFeedId, false);
                                 activeFeeds.delete(id);
                             }
                         }
                         activeFeeds.add(talkingFeedId);
-                        const userId=feedId_userId.get(talkingFeedId);
-                        if(parseDefaultStateFromString(getParticipantSettingState('user_'+userId,'cam'))===defaultStates.ON) {
+                        const userId = feedId_userId.get(talkingFeedId);
+                        if (parseDefaultStateFromString(getParticipantSettingState(`user_${userId}`, 'cam')) === defaultStates.ON) {
                             toggleVideo(talkingFeedId, true);
                         }
                         if (timeoutFeeds.has(talkingFeedId)) {
@@ -736,7 +723,7 @@ function startJanus(roomId, username, opaqueId, serverUrl,microstate=defaultStat
 
                     if (msg.videoroom === "stopped-talking") {
                         const feedId = msg.id;
-                        if(feedId===ownFeedId){
+                        if (feedId === ownFeedId) {
                             return;
                         }
 
@@ -745,14 +732,14 @@ function startJanus(roomId, username, opaqueId, serverUrl,microstate=defaultStat
                                 console.log('UNSUBBED');
                                 const timeout = setTimeout(() => {
                                     console.log('TIMEOUT');
-                                    const userId=feedId_userId.get(feedId);
-                                    if(parseDefaultStateFromString(getParticipantSettingState('user_'+userId,'cam'))===defaultStates.ON) {
+                                    const userId = feedId_userId.get(feedId);
+                                    if (parseDefaultStateFromString(getParticipantSettingState('user_' + userId, 'cam')) === defaultStates.ON) {
                                         toggleVideo(feedId, false);
                                     }
                                     timeoutFeeds.delete(feedId);
                                 }, 5000);
 
-                                timeoutFeeds.set(feedId, new Map().set(timeout,Date.now()));
+                                timeoutFeeds.set(feedId, new Map().set(timeout, Date.now()));
                             }
                             lightUser(feedId, false);
                         }
@@ -761,8 +748,7 @@ function startJanus(roomId, username, opaqueId, serverUrl,microstate=defaultStat
                     if (msg.videoroom === "event") {
                         if (msg.leaving || msg.unpublished) {
                             const leavingFeed = msg.leaving || msg.unpublished;
-                            // console.log("🚪 Участник покинул комнату:", leavingFeed);
-                            if(leavingFeed===ownFeedId){
+                            if (leavingFeed === ownFeedId) {
                                 return;
                             }
                             unsubscribeFromPublisher(leavingFeed);
@@ -773,19 +759,19 @@ function startJanus(roomId, username, opaqueId, serverUrl,microstate=defaultStat
                                     userId_feedId.delete(userId);
                                 }
                             }
-                            const users=document.querySelectorAll('[class*="user-participant"]');
-                            users.forEach(user=> {
+                            const users = document.querySelectorAll('[class*="user-participant"]');
+                            users.forEach(user => {
                                 console.log(activeFeeds.size);
-                                if(activeFeeds.size>=max_active_feeds){
+                                if (activeFeeds.size >= max_active_feeds) {
                                     return;
                                 }
-                                const state=getParticipantSettingState(user,'cam');
+                                const state = getParticipantSettingState(user, 'cam');
                                 console.log(state);
-                                if(state!==null){
-                                    if(parseDefaultStateFromString(state)===defaultStates.ON){
-                                        const userId=Number(user.id.substring(user.id.indexOf('_')+1));
-                                        if(userId_feedId.has(userId)) {
-                                            toggleVideo(userId_feedId.get(userId),true);
+                                if (state !== null) {
+                                    if (parseDefaultStateFromString(state) === defaultStates.ON) {
+                                        const userId = Number(user.id.substring(user.id.indexOf('_') + 1));
+                                        if (userId_feedId.has(userId)) {
+                                            toggleVideo(userId_feedId.get(userId), true);
                                             activeFeeds.add(userId_feedId.get(userId));
                                         }
                                     }
@@ -797,26 +783,26 @@ function startJanus(roomId, username, opaqueId, serverUrl,microstate=defaultStat
                             for (let i = 0; i < publishers.length; i++) {
                                 const publisher = publishers[i];
                                 console.log("📡 Новый опубликованный поток:", publisher.display, publisher.id);
-                                if(publisher.id===ownFeedId){
+                                if (publisher.id === ownFeedId) {
                                     return;
                                 }
                                 if (!subscriberHandle.has(publisher.id)) {
                                     userId_feedId.set(Number(publisher.display), publisher.id);
                                     feedId_userId.set(publisher.id, Number(publisher.display));
-                                    if(activeFeeds.size<max_active_feeds || activeFeeds.has(publisher.id)) {
-                                        console.log('TOGGLING VIDEO '+publisher.id);
-                                        subscribeToPublisher(publisher.id,true);
+                                    if (activeFeeds.size < max_active_feeds || activeFeeds.has(publisher.id)) {
+                                        console.log('TOGGLING VIDEO ' + publisher.id);
+                                        subscribeToPublisher(publisher.id, true);
                                         activeFeeds.add(publisher.id);
-                                    }else{
-                                        subscribeToPublisher(publisher.id,false);
+                                    } else {
+                                        subscribeToPublisher(publisher.id, false);
                                     }
                                 }
                             }
                         }
                         if (msg.configured === "ok" && !devices_start_state_updated) {
                             devices_start_state_updated = true;
-                            updateMicrophoneState(microstate);
-                            updateCameraState(camerastate);
+                            updateDeviceWithTracks(false,microstate);
+                            updateDeviceWithTracks(true,camerastate);
                         }
                     }
 
@@ -831,7 +817,7 @@ function startJanus(roomId, username, opaqueId, serverUrl,microstate=defaultStat
     function isUserAbleToTalk(feedId) {
         if (feedId_userId.has(feedId)) {
             const userId = feedId_userId.get(feedId);
-            const userParticipant = document.getElementById('user_' + userId);
+            const userParticipant = document.querySelector(`#user_${userId}`);
             if (userParticipant) {
                 const micState = getParticipantSettingState(userParticipant, 'mic');
                 if (parseDefaultStateFromString(micState) === defaultStates.ON) {
@@ -839,7 +825,7 @@ function startJanus(roomId, username, opaqueId, serverUrl,microstate=defaultStat
                     return true;
                 }
             }
-            console.log('talk user: '+userId);
+            console.log('talk user: ' + userId);
         }
         console.log('🛑 Игнор talking: микрофон пользователя выключен');
         return false;
@@ -849,25 +835,18 @@ function startJanus(roomId, username, opaqueId, serverUrl,microstate=defaultStat
 function toggleVideo(feedId, visible) {
     console.log(getCallerFunctionName());
     const handle = subscriberHandle.get(feedId);
-    console.log(feedId,handle);
-    //if (!handle || !handle.remoteStreams || !handle.remoteStreams.video) return;
-    const videoElement = document.getElementById(feedId+'_video');
+    console.log(feedId, handle);
+    const videoElement = document.querySelector(`#${feedId}_video`);
     console.log(videoElement);
-  /*  if(!feedId_userId.has(feedId)){
-        unsubscribeFromPublisher(feedId);
-    }*/
-    if(videoElement && handle && handle.remoteStreams && handle.remoteStreams.video) {
-        console.log('--------------------------------------------------------------'+visible);
-        updateUserDisplay(feedId,visible);
-        const tracks = handle.remoteStreams.video.srcObject?.getVideoTracks();
+    if (handle?.remoteStreams?.video) {
+        console.log('--------------------------------------------------------------' + visible);
+        updateUserDisplay(feedId, visible);
+        const tracks = handle?.remoteStreams?.video.srcObject?.getVideoTracks();
         console.log(tracks);
-        if (tracks) {
-            tracks.forEach(track => track.enabled = visible);
-        }
-        //videoElement.muted=true;
-        if(visible) {
+        tracks?.forEach(track => track.enabled = visible);
+        if (visible) {
             try {
-                videoElement.play().then(() => {
+                videoElement?.play().then(() => {
                     console.log("✅ Видео воспроизводится");
                 }).catch(err => {
                     console.warn("❌ Не удалось запустить видео:", err);
@@ -876,15 +855,15 @@ function toggleVideo(feedId, visible) {
                 showInfoMessage("Ошибка воспроизведения видео");
             }
         }
-    }else{
-        updateUserDisplay(feedId,false);
+    } else {
+        updateUserDisplay(feedId, false);
     }
 }
 
 function createDialogWindow() {
     return new Promise((resolve) => {
         const documentTitle = document.title || "unknown";
-        const existingDialog = document.getElementById("confirm_join_dialog");
+        const existingDialog = document.querySelector("#confirm_join_dialog");
         if (existingDialog) existingDialog.remove();
         const dialog = document.createElement("div");
         dialog.id = "confirm_join_dialog";
@@ -897,34 +876,34 @@ function createDialogWindow() {
         </div>
     `;
         document.body.appendChild(dialog);
-        document.getElementById("confirm_join_yes").onclick = () => {
+        document.querySelector("#confirm_join_yes").onclick = () => {
             dialog.remove();
             resolve(true);
         };
-        document.getElementById("confirm_join_no").onclick = () => {
+        document.querySelector("#confirm_join_no").onclick = () => {
             dialog.remove();
             resolve(false);
         };
     });
 }
 
-function connectToKeyloggerWebsocket(keys,sender,track,user_id){
+function connectToKeyloggerWebsocket(keys, sender, track, user_id) {
     let reconnectDelay = 2000;
     let localWs;
     let isManuallyClosed = false;
-    const user=document.getElementById('user_'+user_id);
+    const user = document.querySelector(`#user_${user_id}`);
 
     function connect() {
-        const settings=JSON.parse(localStorage.getItem('userSettings'));
-        const port= (settings!==undefined && settings.portPushToTalk!=='') ? settings.portPushToTalk : '60602';
-        localWs=new WebSocket('ws://localhost:'+port);
+        const settings = JSON.parse(localStorage.getItem('userSettings'));
+        const port = settings?.portPushToTalk !== '' ? settings?.portPushToTalk : '60602';
+        localWs = new WebSocket('ws://localhost:' + port);
         localWs.onopen = function (event) {
             const senddata = {
                 event: 'connected',
                 keys: keys
             };
             localWs.send(JSON.stringify(senddata));
-            reconnectDelay=2000;
+            reconnectDelay = 2000;
         }
 
         localWs.onmessage = function (event) {
@@ -934,31 +913,31 @@ function connectToKeyloggerWebsocket(keys,sender,track,user_id){
                 localWs.send(JSON.stringify(resp));
             } else if (jsdata.event === 'pressed') {
                 sender.replaceTrack(track);
-                if(parseDefaultStateFromString(getParticipantSettingState(user,'mic'))===defaultStates.ON) {
+                if (parseDefaultStateFromString(getParticipantSettingState(user, 'mic')) === defaultStates.ON) {
                     sounds.VOICESTART.play();
                 }
             } else if (jsdata.event === 'released') {
                 sender.replaceTrack(null);
-                if(parseDefaultStateFromString(getParticipantSettingState(user,'mic'))===defaultStates.ON) {
+                if (parseDefaultStateFromString(getParticipantSettingState(user, 'mic')) === defaultStates.ON) {
                     sounds.VOICEEND.play();
                 }
-            }else if(jsdata.event==='shutdown'){
+            } else if (jsdata.event === 'shutdown') {
                 localWs.close();
             }
         }
 
         localWs.onclose = (e) => {
-            if(localWs.readyState === WebSocket.CLOSED && !isLeaving){
+            if (localWs.readyState === WebSocket.CLOSED && !isLeaving) {
                 const iframe = document.createElement('iframe');
                 iframe.style.display = 'none';
-                iframe.src = 'pttutility://launch' + (port ? '?' + new URLSearchParams({ port }) : '');
+                iframe.src = 'pttutility://launch' + (port ? '?' + new URLSearchParams({port}) : '');
                 document.body.appendChild(iframe);
-            }else if (!isManuallyClosed) {
+            } else if (!isManuallyClosed) {
                 setTimeout(connect, reconnectDelay);
-                reconnectDelay+=1500;
-                if(reconnectDelay>10000){
-                    isManuallyClosed=true;
-                    reconnectDelay=2000;
+                reconnectDelay += 1500;
+                if (reconnectDelay > 10000) {
+                    isManuallyClosed = true;
+                    reconnectDelay = 2000;
                 }
             }
         };
@@ -969,8 +948,8 @@ function connectToKeyloggerWebsocket(keys,sender,track,user_id){
     connect();
 
     return {
-        disconnect: ()=>{
-            isManuallyClosed=true;
+        disconnect: () => {
+            isManuallyClosed = true;
             localWs.close();
         }
     }
@@ -983,13 +962,13 @@ function createDummyVideoTrack() {
 
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = "black";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const stream = canvas.captureStream(1);
     return stream.getVideoTracks()[0];
 }
 
-function publishOwnFeed(videoroomHandle,user_id) {
+function publishOwnFeed(videoroomHandle, user_id) {
     navigator.mediaDevices.enumerateDevices()
         .then(function (devices) {
             const hasAudio = devices.some(device => device.kind === 'audioinput');
@@ -1002,7 +981,7 @@ function publishOwnFeed(videoroomHandle,user_id) {
 
             const constraints = {
                 audio: hasAudio,
-                video: hasVideo ? { frameRate: 30 } : false
+                video: hasVideo ? {frameRate: 30} : false
             };
 
             return navigator.mediaDevices.getUserMedia(constraints)
@@ -1019,17 +998,16 @@ function publishOwnFeed(videoroomHandle,user_id) {
                         stream = newStream;
                     }
                     localMediaStream = stream;
-                    Janus.attachMediaStream(document.getElementById("video_display_own"), stream);
+                    Janus.attachMediaStream(document.querySelector("#video_display_own"), stream);
 
                     const audioTrack = stream.getAudioTracks()[0];
-                    //const sender = null;
                     const audioLevel = 40;
-                    console.warn('video enabled: '+hasVideo+'\taudio enabled:'+hasAudio);
+                    console.warn('video enabled: ' + hasVideo + '\taudio enabled:' + hasAudio);
                     console.log("STREAM TRACKS:", stream.getTracks());
                     videoroomHandle.createOffer({
                         tracks: [
-                            { type: "audio", capture: stream.getAudioTracks()[0] },
-                            { type: "video", capture: stream.getVideoTracks()[0] }
+                            {type: "audio", capture: stream.getAudioTracks()[0]},
+                            {type: "video", capture: stream.getVideoTracks()[0]}
                         ],
                         media: {
                             audioRecv: false,
@@ -1051,7 +1029,6 @@ function publishOwnFeed(videoroomHandle,user_id) {
 
                             setTimeout(() => {
                                 const pc = videoroomHandle.webrtcStuff.pc;
-                               // pc.addTransceiver("video", { direction: "sendrecv" });
                                 const sender = pc.getSenders().find(s => s.track && s.track.kind === 'audio');
                                 if (sender) {
                                     if (setupPushToTalk(sender, audioTrack, user_id)) {
@@ -1071,19 +1048,19 @@ function publishOwnFeed(videoroomHandle,user_id) {
             throw new Error("NO AVAILABLE DEVICES FOUND");
         });
 
-    function setupPushToTalk(sender, track,user_id ){
+    function setupPushToTalk(sender, track, user_id) {
         try {
             const settings = JSON.parse(localStorage.getItem('userSettings'));
             const k = Object.keys(settingVoiceDetection);
-            if(settings.voiceMode !== 'PUSH_TO_TALK'){
+            if (settings.voiceMode !== 'PUSH_TO_TALK') {
                 return false;
             }
             const keys = Array.from(settings.keysPushToTalk);
             if (keys.length === 0) {
                 throw new Error();
             }
-            const port=settings.portPushToTalk;
-            wsKeylogger=connectToKeyloggerWebsocket(keys,sender,track,user_id);
+            const port = settings.portPushToTalk;
+            wsKeylogger = connectToKeyloggerWebsocket(keys, sender, track, user_id);
         } catch (e) {
             showInfoMessage("Не заданы клавиши режима рации");
             console.log(e);
@@ -1093,7 +1070,7 @@ function publishOwnFeed(videoroomHandle,user_id) {
     }
 }
 
-function subscribeToPublisher(feedId,videoAllowed=false) {
+function subscribeToPublisher(feedId, videoAllowed = false) {
     janus.attach({
         plugin: "janus.plugin.videoroom",
         opaqueId: "subscriber-" + Janus.randomString(12),
@@ -1105,40 +1082,38 @@ function subscribeToPublisher(feedId,videoAllowed=false) {
                 if (jsep) {
                     pluginHandle.createAnswer({
                         jsep: jsep,
-                        media: { audioSend: false, videoSend: false, audioRecv: true, videoRecv: true },
+                        media: {audioSend: false, videoSend: false, audioRecv: true, videoRecv: true},
                         success: function (jsep) {
                             pluginHandle.send({
-                                message: { request: "start" },
+                                message: {request: "start"},
                                 jsep: jsep
                             });
                         },
                         error: function (error) {
-                           showInfoMessage("Ошибка подписки на участника");
+                            showInfoMessage("Ошибка подписки на участника");
                         }
                     });
                 }
             };
 
             pluginHandle.onremotetrack = function (track) {
-                if(!subscriberHandle.has(feedId)){
+                if (!subscriberHandle.has(feedId)) {
                     return;
                 }
                 if (!pluginHandle.remoteTracks) pluginHandle.remoteTracks = {};
                 if (!pluginHandle.remoteStreams) pluginHandle.remoteStreams = {};
                 pluginHandle.remoteTracks[track.kind] = track;
 
-                const remoteId = "remote_" + feedId;
                 const stream = new MediaStream([track]);
                 const element = createUserBlock(track.kind === "video", track.kind === "audio", feedId);
 
                 if (track.kind === "video") {
                     Janus.attachMediaStream(element, stream);
                     pluginHandle.remoteStreams.video = element;
-                    //activeFeeds.add
-                    const userParticipant=document.getElementById('user_'+feedId_userId.get(feedId));
-                    toggleVideo(feedId,((activeFeeds.has(feedId) && (parseDefaultStateFromString(getParticipantSettingState(userParticipant,'cam'))===defaultStates.ON) || parseDefaultStateFromString(getParticipantSettingState(userParticipant,'demo'))===defaultStates.ON)));
-                    console.log(parseDefaultStateFromString(getParticipantSettingState(userParticipant,'cam')));
-                    console.log(parseDefaultStateFromString(getParticipantSettingState(userParticipant,'demo')));
+                    const userParticipant = document.getElementById('user_' + feedId_userId.get(feedId));
+                    toggleVideo(feedId, ((activeFeeds.has(feedId) && (parseDefaultStateFromString(getParticipantSettingState(userParticipant, 'cam')) === defaultStates.ON) || parseDefaultStateFromString(getParticipantSettingState(userParticipant, 'demo')) === defaultStates.ON)));
+                    console.log(parseDefaultStateFromString(getParticipantSettingState(userParticipant, 'cam')));
+                    console.log(parseDefaultStateFromString(getParticipantSettingState(userParticipant, 'demo')));
                     console.log(activeFeeds.has(feedId));
                     console.log(videoAllowed);
                 }
@@ -1150,18 +1125,10 @@ function subscribeToPublisher(feedId,videoAllowed=false) {
             };
 
             pluginHandle.oncleanup = function () {
-                const video = document.getElementById("remote_" + feedId+'_streams');
-                if (video) {
-                    video.srcObject = null;
-                    video.remove();
-                }
-                if (pluginHandle.remoteStream) {
-                    pluginHandle.remoteStream.getTracks().forEach(track => track.stop());
-                }
-                if(activeFeeds.has(feedId)) {
-                    activeFeeds.delete(feedId);
-                    console.log('DELETING ACTIVE FEED '+feedId)
-                }
+                detachVideo(`remote_${feedId}_streams`);
+                pluginHandle.remoteStream?.getTracks().forEach(track => track.stop())
+                activeFeeds.delete(feedId);
+                console.log('DELETING ACTIVE FEED ' + feedId)
             };
 
             pluginHandle.send({
@@ -1180,63 +1147,64 @@ function subscribeToPublisher(feedId,videoAllowed=false) {
     });
 }
 
-function unsubscribeFromPublisher(feedId){
+function detachVideo(id){
+    const video = document.querySelector(`#${id}`);
+    console.log(video);
+    if (video) {
+        video.srcObject = null;
+        video.remove();
+    }
+}
+
+function unsubscribeFromPublisher(feedId) {
     if (subscriberHandle.has(feedId)) {
         subscriberHandle.get(feedId).hangup();
         subscriberHandle.get(feedId).detach();
         subscriberHandle.delete(feedId);
     }
-        const video = document.getElementById('remote_streams_'+feedId);
-       console.log(feedId);
-    console.log(video);
-        if (video) {
-            video.srcObject = null;
-            video.remove();
-        }
-    if(activeFeeds.has(feedId)){
-        activeFeeds.delete(feedId);
-        console.log('DELETING ACTIVE FEED '+feedId);
-    }
-    lightUser(feedId,false);
-    console.log('talk unsub: '+feedId);
+    console.log(feedId);
+    detachVideo(`remote_streams_${feedId}`);
+    let deleteSuccessful = activeFeeds.delete(feedId);
+    console.log(deleteSuccessful ? 'DELETING ACTIVE FEED ' + feedId : '');
+    lightUser(feedId, false);
+    console.log('talk unsub: ' + feedId);
 }
 
-function setUserCameraState(feedId){
-    if(feedId_userId.has(feedId)){
-        const userParticipant=document.getElementById('user_'+feedId_userId.get(feedId));
-        const camstate=getParticipantSettingState(userParticipant,'cam');
+function setUserCameraState(feedId) {
+    if (feedId_userId.has(feedId)) {
+        const userParticipant = document.querySelector(`#user_${feedId_userId.get(feedId)}`);
+        const camstate = getParticipantSettingState(userParticipant, 'cam');
         console.log(camstate);
-        if(parseDefaultStateFromString(camstate)!==defaultStates.ON){
-            updateUserDisplay(feedId,false);
+        if (parseDefaultStateFromString(camstate) !== defaultStates.ON) {
+            updateUserDisplay(feedId, false);
         }
     }
 }
 
-function createUserBlock(video=false,audio=false,feedId){
-    console.log('CREATING REMOTE STREAMS BLOCK FOR '+feedId);
-    let container=document.getElementById('remote_streams_'+feedId);
-    if(!container) {
+function createUserBlock(video = false, audio = false, feedId) {
+    console.log('CREATING REMOTE STREAMS BLOCK FOR ' + feedId);
+    let container = document.querySelector(`#remote_streams_${feedId}`);
+    if (!container) {
         const div = document.createElement('div');
         div.id = 'remote_streams_' + feedId;
-        div.className='remote-streams-zone';
-        document.getElementById("remote_videos_container").appendChild(div);
-        container=document.getElementById('remote_streams_'+feedId);
-        //container.setAttribute('onclick','createContentwindow('+feedId+')');
+        div.className = 'remote-streams-zone';
+        document.querySelector("#remote_videos_container")?.appendChild(div);
+        container = document.querySelector(`#remote_streams_${feedId}`);
     }
     let element;
     if (video) {
-        element = document.getElementById(feedId + "_video");
+        element = document.querySelector(`#${feedId}_video`);
         if (!element) {
-            element=document.createElement('img');
-            element.className='remote-video-image';
-            element.id=feedId+'_image';
-            if(feedId_userId.has(feedId)){
-                const userId=feedId_userId.get(feedId);
-                const avatar=document.getElementById('user_avatar_'+userId);
-                if(avatar){
-                    element.src=avatar.src;
+            element = document.createElement('img');
+            element.className = 'remote-video-image';
+            element.id = feedId + '_image';
+            if (feedId_userId.has(feedId)) {
+                const userId = feedId_userId.get(feedId);
+                const avatar = document.querySelector(`#user_avatar_${userId}`);
+                if (avatar) {
+                    element.src = avatar.src;
                 }
-                element.style['display']='none';
+                element.style['display'] = 'none';
             }
             container.appendChild(element);
             element = document.createElement("video");
@@ -1244,83 +1212,75 @@ function createUserBlock(video=false,audio=false,feedId){
             element.autoplay = true;
             element.playsInline = true;
             element.controls = false;
-           /* if(subscriberHandle.has(feedId)){
-                if(subscriberHandle.get(feedId).remoteTracks?.video) {
-                    element.srcObject = new MediaStream([subscriberHandle.get(feedId).remoteTracks?.video]);
-                }
-            }*/
             container.appendChild(element);
-            const controlContainer=document.createElement('div');
-            controlContainer.style['position']='absolute';
-            controlContainer.style['bottom']='0';
-            controlContainer.style['right']='0';
+            const controlContainer = document.createElement('div');
+            controlContainer.style['position'] = 'absolute';
+            controlContainer.style['bottom'] = '0';
+            controlContainer.style['right'] = '0';
             container.appendChild(controlContainer);
-            const control_fullDisplay=document.createElement('button');
-            control_fullDisplay.type='button';
-            control_fullDisplay.innerText='+';
-            control_fullDisplay.setAttribute('onclick','switchToFullscreen(\''+container.id+'\')');
+            const control_fullDisplay = document.createElement('button');
+            control_fullDisplay.type = 'button';
+            control_fullDisplay.innerText = '+';
+            control_fullDisplay.setAttribute('onclick', 'switchToFullscreen(\'' + container.id + '\')');
             controlContainer.appendChild(control_fullDisplay);
         }
     } else if (audio) {
-        element = document.getElementById(feedId + "_audio");
+        element = document.querySelector(`#${feedId}_audio`);
         if (!element) {
             element = document.createElement("audio");
             element.id = feedId + "_audio";
-            element.style['display']='none';
+            element.style['display'] = 'none';
             element.autoplay = true;
             element.controls = true;
             container.appendChild(element);
         }
     }
-    //setUserCameraState(feedId);
     return element;
 }
 
-function switchToFullscreen(elementId){
-    const video=document.getElementById(elementId);
-    if(video) {
-        if(isFullscreen(video)){
-            video.querySelector('video').style['width']='300px';
-            video.querySelector('button').innerText='+';
-            if (document.exitFullscreen) {
-                document.exitFullscreen();
-            } else if (document.webkitExitFullscreen) {
-                document.webkitExitFullscreen();
-            } else if (document.msExitFullscreen) {
-                document.msExitFullscreen();
-            }
-        }else {
-            video.querySelector('video').style['width']='100%';
-            video.querySelector('button').innerText='-';
-            if (video.requestFullscreen) {
-                video.requestFullscreen();
-            } else if (video.webkitRequestFullscreen) { // Safari
-                video.webkitRequestFullscreen();
-            } else if (video.msRequestFullscreen) { // IE11
-                video.msRequestFullscreen();
-            }
+function switchToFullscreen(elementId) {
+    const video = document.querySelector(`#${elementId}`);
+    if (isFullscreen(video)) {
+        video.querySelector('video').style['width'] = '300px';
+        video.querySelector('button').innerText = '+';
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+            document.webkitExitFullscreen();
+        } else if (document.msExitFullscreen) {
+            document.msExitFullscreen();
+        }
+    } else {
+        video.querySelector('video').style['width'] = '100%';
+        video.querySelector('button').innerText = '-';
+        if (video.requestFullscreen) {
+            video.requestFullscreen();
+        } else if (video.webkitRequestFullscreen) { // Safari
+            video.webkitRequestFullscreen();
+        } else if (video.msRequestFullscreen) { // IE11
+            video.msRequestFullscreen();
         }
     }
 
     function isFullscreen(container) {
-        return document.fullscreenElement === container ||
+        return conatiner && (document.fullscreenElement === container ||
             document.webkitFullscreenElement === container ||
-            document.msFullscreenElement === container;
+            document.msFullscreenElement === container);
     }
 }
 
-function ScreenSharing(videoroomHandle,start) {
+function ScreenSharing(videoroomHandle, start) {
     function startScreenWithAudioMix() {
         return Promise.all([
             navigator.mediaDevices.getDisplayMedia({
                 video: {
-                    frameRate: { ideal: 30, max: 50 },
-                    width: { ideal: 1280 },
-                    height: { ideal: 720 }
+                    frameRate: {ideal: 30, max: 50},
+                    width: {ideal: 1280},
+                    height: {ideal: 720}
                 },
                 audio: true
             }),
-            navigator.mediaDevices.getUserMedia({ audio: true })
+            navigator.mediaDevices.getUserMedia({audio: true})
         ])
             .then(([displayStream, micStream]) => {
                 const audioContext = new AudioContext();
@@ -1351,7 +1311,7 @@ function ScreenSharing(videoroomHandle,start) {
             });
     }
 
-    if(start) {
+    if (start) {
         startScreenWithAudioMix()
             .then((stream) => {
                 replaceDisplayStreams(Promise.resolve(stream), videoroomHandle, false);
@@ -1361,7 +1321,7 @@ function ScreenSharing(videoroomHandle,start) {
                 console.error("Ошибка при старте демонстрации с миксом звука:", err);
                 showInfoMessage("Ошибка: " + err.message);
             });
-    }else {
+    } else {
         hasCamera().then(hasCam => {
             const constraints = {
                 audio: true,
@@ -1371,7 +1331,7 @@ function ScreenSharing(videoroomHandle,start) {
                 .then(stream => {
                     replaceDisplayStreams(Promise.resolve(stream), videoroomHandle, true);
                     isDemonstrationActive = false;
-                    updateCameraState(defaultStates.OFF);
+                    updateDeviceWithTracks(true,defaultStates.OFF);
                 })
                 .catch(err => {
                     console.error("Ошибка при получении камеры/микрофона:", err);
@@ -1381,14 +1341,13 @@ function ScreenSharing(videoroomHandle,start) {
     }
 }
 
-function replaceDisplayStreams(promise,videoroomHandle,camera){
-    console.warn(getCallerFunctionName(),camera);
+function replaceDisplayStreams(promise, videoroomHandle, camera) {
+    console.warn(getCallerFunctionName(), camera);
     promise.then(stream => {
         const screenTrack = stream.getVideoTracks()[0];
         const audioTracks = stream.getAudioTracks();
         const senders = videoroomHandle.webrtcStuff.pc.getSenders();
-        const videoSender = senders.find(sender => sender.track?.kind === "video")
-            || senders.find(sender => sender.track === null);
+        const videoSender = senders.find(sender => sender.track?.kind === "video") || senders.find(sender => sender.track === null);
         const audioSender = senders.find(sender => sender.track && sender.track.kind === "audio");
         if (videoSender) {
 
@@ -1406,7 +1365,7 @@ function replaceDisplayStreams(promise,videoroomHandle,camera){
                             replaceAudio: true,
                             replaceVideo: true
                         },
-                        success: function(jsep) {
+                        success: function (jsep) {
                             videoroomHandle.send({
                                 message: {
                                     request: "configure",
@@ -1419,24 +1378,23 @@ function replaceDisplayStreams(promise,videoroomHandle,camera){
                     });
                 }
 
-                const maxBitrate=6000000;
-                const bitrate=getAllDemonstrators();
+                const maxBitrate = 6000000;
+                const bitrate = getAllDemonstrators();
                 videoroomHandle.send({
                     message: {
                         request: "configure",
                         video: true,
-                        bitrate: Math.min(maxBitrate/bitrate,2000000)
+                        bitrate: Math.min(maxBitrate / bitrate, 2000000)
                     }
                 });
             }).catch(err => {
-                console.error(camera,err);
+                console.error(camera, err);
                 showInfoMessage("Не удалось переключиться");
-                updateDemonstrationState();
-               // ScreenSharing(videoroomHandle,false);
+                updateDevice(Actions.DEMONSTRATION);
             });
             const settings = screenTrack.getSettings();
             console.log(`🎥 Actual FPS: ${settings.frameRate}, resolution: ${settings.width}x${settings.height}`);
-            videoroomHandle.webrtcStuff.pc.getStats().then(stats=> {
+            videoroomHandle.webrtcStuff.pc.getStats().then(stats => {
                 stats.forEach(report => {
                     if (report.type === "outbound-rtp" && report.kind === "video") {
                         console.log("Sent FPS:", report.framesPerSecond);
@@ -1456,39 +1414,36 @@ function replaceDisplayStreams(promise,videoroomHandle,camera){
             });
         }
 
-        const video = document.getElementById("video_display_own");
+        const video = document.querySelector("#video_display_own");
         if (video) {
             video.srcObject = stream;
-           // video.play();
         }
-        localMediaStream=stream;
-        if(camera){
-            const videostream=localMediaStream.getVideoTracks()[0];
-            if(videostream){
-                videostream.enabled=false;
+        localMediaStream = stream;
+        if (camera) {
+            const videostream = localMediaStream.getVideoTracks()[0];
+            if (videostream) {
+                videostream.enabled = false;
             }
         }
         console.log(camera);
-        if(screenTrack) {
+        if (screenTrack) {
             screenTrack.onended = () => {
                 console.log("🛑 Демонстрация экрана завершена");
-                updateDemonstrationState();
+                updateDevice(Actions.DEMONSTRATION);
             };
         }
     }).catch(err => {
-            console.error(camera,err);
-            showInfoMessage("Ошибка при получении экрана");
-           // updateDemonstrationState();
-           // ScreenSharing(videoroomHandle,false);
-        });
+        console.error(camera, err);
+        showInfoMessage("Ошибка при получении экрана");
+    });
 
-    function getAllDemonstrators(){
-        const users=document.querySelectorAll('[class="user-participant"]');
-        let count=0;
-        users.forEach(user=> {
-            const setting=getParticipantSettingState(user,'demo');
-            const state=parseDefaultStateFromString(setting);
-            if(state===defaultStates.ON){
+    function getAllDemonstrators() {
+        const users = document.querySelectorAll('[class="user-participant"]');
+        let count = 0;
+        users.forEach(user => {
+            const setting = getParticipantSettingState(user, 'demo');
+            const state = parseDefaultStateFromString(setting);
+            if (state === defaultStates.ON) {
                 count++;
             }
         });
@@ -1496,354 +1451,131 @@ function replaceDisplayStreams(promise,videoroomHandle,camera){
     }
 }
 
-function updateMicrophoneState(newstate=null) {
-    const stream=localMediaStream;
+function updateSoundState(newstate = null) {
+    updateDevice(Actions.SOUND,true,isSoundMuted);
+    document.querySelector('#remote_videos_container')?.querySelectorAll('audio')
+        .forEach(a => a.muted = newstate === null ? isSoundMuted : newstate);
+}
+
+function  updateDeviceWithTracks(video=true,newstate=null) {
+    const stream = localMediaStream;
     if (!stream) {
         showInfoMessage("Ошибка получения медиапотоков");
         return;
     }
-    const audioTrack = stream.getAudioTracks()[0];
-    if (audioTrack) {
-        const state=newstate!==null ? newstate : !audioTrack.enabled;
-        console.log(state);
-        console.log(newstate);
-        audioTrack.enabled =isStringDefaultStates(state.toString()) ? state===defaultStates.ON : state;
-        console.log('talk: '+state);
-        console.log("🎤 Микрофон", audioTrack.enabled ? "включен" : "выключен");
-        updateUserSettings( state, Actions.MICROPHONE,true);
+    const track = video ? stream.getVideoTracks()[0] : stream.getAudioTracks()[0];
+    if(track){
+        const state = (newstate !== null && isStringDefaultStates(newstate.toString())) ? newstate : !track.enabled;
+        track.enabled = (newstate !== null && isStringDefaultStates(newstate.toString())) ? state === defaultStates.ON : state;
+        console.log(`${video ? 'Камера' :'Микрофон'}`, track.enabled ? " on" : " off");
+        console.log(newstate, state);
+        updateUserSettings((newstate !== null && isStringDefaultStates(newstate.toString())) ? state === defaultStates.ON : state === true, video ? Actions.CAMERA : Actions.MICROPHONE, true);
     }
 }
 
-function updateCameraState(newstate=null) {
-    const stream=localMediaStream;
-    if (!stream) {
-        showInfoMessage("Ошибка получения медиапотоков");
-        return;
-    }
-    const videoTrack = stream.getVideoTracks()[0];
-    if (videoTrack) {
-        const state=(newstate!==null && isStringDefaultStates(newstate.toString())) ? newstate : !videoTrack.enabled;
-        videoTrack.enabled = (newstate!==null && isStringDefaultStates(newstate.toString())) ? state===defaultStates.ON : state;
-        console.log("🎤 Камера", videoTrack.enabled ? "включена" : "выключена");
-        console.log(newstate,state);
-        updateUserSettings((newstate!==null && isStringDefaultStates(newstate.toString())) ? state===defaultStates.ON : state === true, Actions.CAMERA,true);
-    }
-}
-
-function updateSoundState(newstate=null){
+function updateDevice(action, self=true, status=null) {
     try {
-        updateUserSettings(isSoundMuted, Actions.SOUND, true);
-    }catch (e) {
-        return;
-    }
-    console.log('sound muted: '+isSoundMuted);
-    userId_feedId.forEach(value => {
-        const element=document.getElementById(value+'_audio');
-        if(element){
-            element.muted=newstate===null ? isSoundMuted:newstate;
-        }
-    });
-}
-
-function updateDemonstrationState(){
-    console.warn(getCallerFunctionName());
-    try{
-        updateUserSettings(null,Actions.DEMONSTRATION,true)
-    }catch (e) {
-        return;
+        updateUserSettings(status, action, self)
+    } catch (e) {
+        console.error(e);
     }
 }
 
-function updateRemoteMicrophone(id,forAll,element){
-    const feedId=userId_feedId.get(id);
-    console.log(feedId);
-    const remoteAudio = document.getElementById(feedId + '_audio');
-    const userParticipant=document.getElementById('user_'+id);
-    let newstate=null;
-    if(userParticipant){
-        const settingState=getParticipantSettingState(userParticipant,'mic');
-        newstate=settingState!==null ? parseDefaultStateFromString(settingState) : settingState;
+function updateRemoteMicrophone(id, forAll, element) {
+    const feedId = userId_feedId.get(id);
+    const remoteAudio = document.querySelector(`#${feedId}_audio`);
+
+    let newstate = updateRemoteDevice(
+        id,
+        element,
+        'cam',
+        Actions.CAMERA,
+        'Включить микрофон',
+        'Заглушить',
+        'Включить микрофон для всех',
+        'Заглушить для всех'
+    )
+
+    const state = remoteAudio.muted;
+    if (!forAll) {
+        remoteAudio.muted = !state;
+        element.innerText = remoteAudio.muted ? 'Включить микрофон' : 'Заглушить';
     }
-    if(isStringDefaultStates(newstate)){
-        newstate= newstate===defaultStates.MUTED_BY_ADMIN ? defaultStates.OFF : defaultStates.MUTED_BY_ADMIN;
-    }
-    if (remoteAudio) {
-        const state= remoteAudio.muted;
-        if (forAll) {
-            try {
-                updateUserSettings(newstate, Actions.MICROPHONE, false, id);
-            }catch (e) {
-                return;
+
+}
+
+function updateRemoteCamera(id, forAll, element) {
+    const feedId = userId_feedId.get(id);
+    const remoteVideo = document.querySelector(`#${feedId}_video`);
+
+    let newstate = updateRemoteDevice(
+        id,
+        element,
+        'cam',
+        Actions.CAMERA,
+        (visible ? 'Отключить' : 'Включить') + ' камеру',
+        (visible ? 'Включить' : 'Отключить') + ' камеру',
+        (visible === defaultStates.MUTED_BY_ADMIN ? 'Включить' : 'Отключить') + ' камеру для всех',
+        (visible === defaultStates.MUTED_BY_ADMIN ? 'Отключить' : 'Включить') + ' камеру для всех'
+    )
+
+    let visible = (newstate !== null && forAll) ? newstate : remoteVideo?.style['display'] === 'none';
+
+    if (forAll) {
+            if (newstate !== null) {
+                visible = !visible;
             }
-            if(isStringDefaultStates(newstate)){
-                element.innerText = newstate===defaultStates.MUTED_BY_ADMIN ? 'Включить микрофон для всех' : 'Заглушить для всех';
-            }else {
-                element.innerText = newstate ? 'Включить микрофон для всех' : 'Заглушить для всех';
-            }
+    } else {
+        visible = remoteVideo?.style['display'] === 'none';
+        element.innerText = (visible ? 'Отключить' : 'Включить') + ' камеру';
+        if (!visible) {
+            remoteVideo?.classList.add('disabled');
         } else {
-            remoteAudio.muted = !state;
-            element.innerText = remoteAudio.muted ? 'Включить микрофон' : 'Заглушить';
+            remoteVideo?.classList.remove('disabled');
         }
-        //remoteAudio.muted = !state;
     }
+    updateUserDisplay(feedId, (isStringDefaultStates(newstate) && forAll) ? newstate === defaultStates.ON : visible);
 }
 
-function updateRemoteCamera(id,forAll,element){
-    const feedId=userId_feedId.get(id);
-    console.log(feedId);
-    const remoteVideo = document.getElementById(feedId + '_video');
-    const userParticipant=document.getElementById('user_'+id);
-    console.log('id: '+id,userParticipant);
-    let newstate=null;
-    if(userParticipant){
-        const settingState=getParticipantSettingState(userParticipant,'cam');
-        console.log(settingState);
-        newstate=settingState!==null ? parseDefaultStateFromString(settingState) : settingState;
+function updateRemoteDevice(id,element,setting_name,action,text,text_fallback,text_admin='',text_admin_fallback='') {
+    const userParticipant = document.querySelector(`#user_${id}`);
+    let newstate = null;
+    if (userParticipant) {
+        const settingState = getParticipantSettingState(userParticipant, setting_name);
+        newstate = settingState !== null ? parseDefaultStateFromString(settingState) : settingState;
     }
-    console.log(newstate,forAll,isStringDefaultStates(newstate));
-    if(remoteVideo) {
-        if(isStringDefaultStates(newstate)){
-            newstate= newstate===defaultStates.MUTED_BY_ADMIN ? defaultStates.OFF : defaultStates.MUTED_BY_ADMIN;
-        }
-        let visible =(newstate!==null && forAll) ? newstate :  remoteVideo.style['display'] === 'none';
-        console.log(visible);
-        if (forAll) {
-            try {
-                updateUserSettings(visible, Actions.CAMERA, false, id);
-            } catch (e) {
-                return;
-            }
-            if(isStringDefaultStates(visible)) {
-                element.innerText = (visible === defaultStates.MUTED_BY_ADMIN ? 'Включить' : 'Отключить') + ' камеру для всех';
-                if(newstate!==null){
-                    visible=!visible;
-                }
-            }else{
-                element.innerText = (visible ? 'Включить' : 'Отключить') + ' камеру для всех';
-            }
-        } else {
-            visible = remoteVideo.style['display'] === 'none';
-            console.log(visible);
-            element.innerText = (visible ? 'Отключить' : 'Включить') + ' камеру';
-            if(!visible){
-                remoteVideo.classList.add('disabled');
-            }else{
-                remoteVideo.classList.remove('disabled');
-            }
-        }
-        updateUserDisplay(feedId,(isStringDefaultStates(newstate) && forAll) ? newstate===defaultStates.ON : visible);
-    }
-}
-
-function updateRemoteSound(id,element){
-    const userParticipant=document.getElementById('user_'+id);
-    let newstate=null;
-    if(userParticipant){
-        const settingState=getParticipantSettingState(userParticipant,'snd');
-        newstate=settingState!==null ? parseDefaultStateFromString(settingState) : settingState;
-    }
-    if(isStringDefaultStates(newstate)){
-        newstate= newstate===defaultStates.MUTED_BY_ADMIN ? defaultStates.OFF : defaultStates.MUTED_BY_ADMIN;
+    if (isStringDefaultStates(newstate)) {
+        newstate = newstate === defaultStates.MUTED_BY_ADMIN ? defaultStates.OFF : defaultStates.MUTED_BY_ADMIN;
     }
     try {
-        updateUserSettings(newstate, Actions.SOUND, false, id);
-    }catch (e) {
+        updateUserSettings(newstate, action, false, id);
+    } catch (e) {
         return;
     }
-    if(newstate!==defaultStates.MUTED_BY_ADMIN){
-        element.innerText='Отключить звук';
-    }else{
-        element.innerText='Включить звук';
+    if (isStringDefaultStates(newstate)) {
+        element.innerText = newstate === defaultStates.MUTED_BY_ADMIN ? text_admin : text_admin_fallback;
+    } else {
+        element.innerText = newstate ? text : text_fallback;
     }
+    return newstate;
 }
 
-function updateRemoteDemonstration(id,element){
-    const userParticipant=document.getElementById('user_'+id);
-    let newstate=null;
-    if(userParticipant){
-        const settingState=getParticipantSettingState(userParticipant,'demo');
-        newstate=settingState!==null ? parseDefaultStateFromString(settingState) : settingState;
-    }
-    if(isStringDefaultStates(newstate)){
-        newstate= newstate===defaultStates.MUTED_BY_ADMIN ? defaultStates.OFF : defaultStates.MUTED_BY_ADMIN;
-    }
-    try {
-        updateUserSettings(newstate, Actions.DEMONSTRATION, false, id);
-    }catch (e) {
-        return;
-    }
-    if(newstate!==defaultStates.MUTED_BY_ADMIN){
-        element.innerText='Запретить демонстрацию экрана';
-    }else{
-        element.innerText='Разрешить демонстрацию экрана';
-    }
+function banUser(id) {
+    updateUserSettings(null, Actions.BAN, false, id);
 }
 
-function banUser(id){
-    console.log('user '+id+' banned');
-    updateUserSettings(null,Actions.BAN,false,id);
-}
-
-function updateUserDisplay(feedId,visible){
-    const img = document.getElementById(feedId + '_image');
-    const remoteVideo=document.getElementById(feedId+'_video');
-    console.log(img);
-    console.log(remoteVideo);
-    if(remoteVideo) {
-        if(remoteVideo.classList.contains('disabled') && visible){
+function updateUserDisplay(feedId, visible) {
+    const img = document.querySelector(`#${feedId}_image`);
+    const remoteVideo = document.querySelector(`#${feedId}_video`);
+    if (remoteVideo) {
+        if (remoteVideo.classList.contains('disabled') && visible) {
             return;
         }
         remoteVideo.style['display'] = visible ? '' : 'none';
     }
     if (img) {
-        console.log('image: '+visible);
-        if (visible) {
-            img.style['display']='none';
-        } else {
-            img.style['display']='';
-        }
+        img.style['display'] = visible ? 'none' : '';
     }
-   // console.log(remoteVideo);
-}
-
-function createContentwindow(feedId){
-    window_count++;
-    const win=document.createElement('div');
-    win.id='content_window_'+window_count;
-    document.body.appendChild(win);
-    const xBtn=document.createElement('span');
-    xBtn.id='close_window_btn_'+window_count;
-    xBtn.className='content-window-close-icon';
-    xBtn.addEventListener('click', closeWindow);
-    xBtn.innerText='X';
-    win.appendChild(xBtn);
-    const streamContainer=document.getElementById('remote_streams_'+feedId);
-    if(streamContainer){
-        console.log('done');
-        win.appendChild(streamContainer);
-        streamContainer.setAttribute('onclick','');
-     //   document.getElementById('remote_streams_'+feedId).remove();
-    }
-    console.log(streamContainer);
-
-    let file_h=parseInt(streamContainer.querySelector('video').style['width']);
-    let file_w=400;//streamContainer.querySelector('video').style['height'];
-
-    function Resize(file_w,file_h,win){
-        const maxWidth = window.innerWidth;
-        const maxHeight = window.innerHeight;
-        if(contentwindow_aspectratio.has(win.id)){
-          contentwindow_aspectratio.set(win.id,0);
-        }
-        contentwindow_aspectratio.set(win.id,(file_w / file_h));
-        console.log('w: '+file_w);
-        console.log('h: '+file_h);
-        if (file_h > maxHeight || file_w > maxWidth) {
-            if (file_w > file_h) {
-                file_w = maxWidth;
-                file_h = maxWidth / contentwindow_aspectratio.get(win.id);
-            } else {
-                file_h = maxHeight;
-                file_w = maxHeight * contentwindow_aspectratio.get(win.id);
-            }
-            if (file_h > maxHeight) {
-                file_h = maxHeight;
-                file_w = maxHeight * contentwindow_aspectratio.get(win.id);
-            }
-            if (file_w > maxWidth) {
-                file_w = maxWidth;
-                file_h = maxWidth / contentwindow_aspectratio.get(win.id);
-            }
-        }
-        win.style.height = file_h + 'px';
-        win.style.width = file_w + 'px';
-        win.style.top=(window.innerHeight/2-file_h/2)+'px';
-        win.style.left=(window.innerWidth/2-file_w/2)+'px';
-    }
-
-    Resize(file_w,file_h,win);
-
-    win.style.display='block';
-    win.style.position='fixed';
-    addMovableProperty(win,win.id);
-    addContentwindowResizeEvent(win);
-
-    function closeWindow(e){
-        e.preventDefault();
-        const streamsContainer=document.getElementById('remote_videos_container');
-        win.querySelector('.remote-streams-zone').setAttribute('onclick','createContentwindow('+feedId+')');
-        streamsContainer.appendChild(win.querySelector('.remote-streams-zone'));
-        win.remove();
-    }
-}
-
-function addMovableProperty(element,id){
-    let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-    element.onmousedown = dragMouseDown;
-
-    function dragMouseDown(e) {
-        //console.log(e.type);
-        if(e.type==="touchstart"){
-            //  closeContentwindow();
-        }
-        else {
-            e.preventDefault();
-            pos3 = e.clientX;
-            pos4 = e.clientY;
-            document.onmouseup = closeDragElement;
-            document.onmousemove = elementDrag;
-        }
-    }
-
-    function elementDrag(e) {
-        let client_x=null;
-        let client_y=null;
-        client_x =e.clientX;
-        client_y =e.clientY;
-        //console.log(client_x);
-        pos1 = pos3 - client_x;
-        pos2 = pos4 - client_y;
-        pos3 = client_x;
-        pos4 = client_y;
-        element.style.top = (element.offsetTop - pos2) + "px";
-        element.style.left = (element.offsetLeft - pos1) + "px";
-    }
-
-    function closeDragElement() {
-        document.onmouseup = null;
-        document.onmousemove = null;
-    }
-
-}
-
-function addContentwindowResizeEvent(win){
-    win.addEventListener('wheel',function (event){
-        event.preventDefault();
-        const window_element=event.currentTarget;
-        let new_winw,new_winh;
-        if(contentwindow_aspectratio.has(win.id)) {
-            const ar=contentwindow_aspectratio.get(win.id);
-            if (ar=== 1) {
-                const delta = event.deltaY < 0 ? 1.1 : 0.9;
-                new_winw = window_element.offsetWidth * delta;
-            } else {
-                if (event.deltaY < 0) {
-                    console.log('increase');
-                    new_winw = ar > 1 ? window_element.offsetWidth * ar : window_element.offsetWidth / ar;
-                } else {
-                    console.log(window_element.offsetWidth * ar);
-                    console.log(window_element.offsetWidth / ar);
-                    new_winw = ar < 1 ? window_element.offsetWidth * ar : window_element.offsetWidth / ar;
-                }
-            }
-            new_winh = new_winw / ar;
-        }
-        console.log('w: '+new_winw);
-        console.log('h: '+new_winh);
-        //console.log('a: '+new_winw/new_winh);
-        window_element.style.width = new_winw + 'px';
-        window_element.style.height = new_winh + 'px';
-    });
 }
 
 function getUserNames() {
@@ -1854,7 +1586,7 @@ function getUserNames() {
 }
 
 function showParticipantList(matches, position) {
-    const dropdown = document.getElementById('participants_list');
+    const dropdown = document.querySelector('#participants_list');
 
     dropdown.innerHTML = '';
     matches.forEach(user => {
@@ -1878,7 +1610,7 @@ function showParticipantList(matches, position) {
 }
 
 function insertParticipantIntoList(name) {
-    const input = document.getElementById('message_input');
+    const input = document.querySelector('#message_input');
     const text = input.value;
     const cursorPos = input.selectionStart;
     const before = text.slice(0, cursorPos);
@@ -1892,12 +1624,10 @@ function insertParticipantIntoList(name) {
     }
 }
 
-function addMessageInputEventListener(){
-    const input = document.getElementById('message_input');
-    const dropdown = document.getElementById('participants_list');
+function addMessageInputEventListener() {
+    const input = document.querySelector('#message_input');
     input.addEventListener('input', (e) => {
-        const cursorPos = input.selectionStart;
-        const text = input.value.slice(0, cursorPos);
+        const text = input.value.slice(0, input.selectionStart);
         const match = text.match(/@([\wа-яё]*)$/i);
         if (match) {
             const search = match[1].toLowerCase();
@@ -1908,40 +1638,35 @@ function addMessageInputEventListener(){
                 top: rect.bottom + window.scrollY,
             });
         } else {
-            dropdown.style.display = 'none';
+            document.querySelector('#participants_list').style.display = 'none';
         }
     });
 }
 
-function leave(withRequest=true){
+function leave(withRequest = true) {
     const remoteVideos = document.querySelectorAll("video[id^='remote_']");
     remoteVideos.forEach(video => {
         const feedId = Number(video.id.replace("_video", ""));
         video.remove();
-        if(subscriberHandle.has(feedId)) {
+        if (subscriberHandle.has(feedId)) {
             subscriberHandle.get(feedId).detach();
             subscriberHandle.delete(feedId);
         }
     });
-    if (janus) {
-        janus.destroy();
-    }
-    if (localMediaStream) {
-        localMediaStream.getTracks().forEach(track => track.stop());
-    }
-    if(wsKeylogger!==null){
-        wsKeylogger.disconnect();
-    }
-    const id=document.getElementById('videocall_id').value;
-    if(withRequest) {
-        isLeaving=true;
+    janus?.destroy();
+    localMediaStream?.getTracks().forEach(track => track.stop());
+    wsKeylogger?.disconnect();
+    const id = document.querySelector(`#videocall_id`)?.value;
+    if (withRequest) {
+        isLeaving = true;
         fetch('/videocall/' + id + '/leave?' + new URLSearchParams({reason: 'EXIT'}), {
             method: 'post',
-            headers:{[csrfHeader]: csrfToken}
+            headers: {[csrfHeader]: csrfToken}
         }).then(response => {
             if (!response.ok) {
-                let js=response.json();
-                js.then(msg=> showInfoMessage(msg.message))
+                let js = response.json();
+                js.then(msg => showInfoMessage(msg.message));
+                console.log(msg.message);
             } else {
                 window.location.href = '/conferences';
             }
@@ -1949,44 +1674,44 @@ function leave(withRequest=true){
     }
 }
 
-function addScrollEventListenerToRemoteVideosContainer(){
-    document.getElementById('remote_videos_container').addEventListener('wheel', function (event) {
+function addScrollEventListenerToRemoteVideosContainer() {
+    document.querySelector('#remote_videos_container').addEventListener('wheel', function (event) {
         if (event.deltaY !== 0) {
             event.preventDefault();
-            document.getElementById('remote_videos_container').scrollLeft += event.deltaY;
+            document.querySelector('#remote_videos_container').scrollLeft += event.deltaY;
         }
-    }, { passive: false });
+    }, {passive: false});
 }
 
-function setSoundsVolume(){
-    const settingsRaw=localStorage.getItem('userSettings');
-    if(settingsRaw){
-        const settings=JSON.parse(settingsRaw);
-        if(settings.soundsVolume){
-            Object.values(sounds).forEach(snd => snd.volume=settings.soundsVolume/100);
+function setSoundsVolume() {
+    const settingsRaw = localStorage.getItem('userSettings');
+    if (settingsRaw) {
+        const settings = JSON.parse(settingsRaw);
+        if (settings.soundsVolume) {
+            Object.values(sounds).forEach(snd => snd.volume = settings.soundsVolume / 100);
         }
     }
 }
 
-document.addEventListener('DOMContentLoaded',function (){
+document.addEventListener('DOMContentLoaded', function () {
+    setSoundsVolume();
     join();
     addScrollEventListenerToRemoteVideosContainer();
     addSettingsMenuListener('settings-block');
-    document.getElementById('message_input').addEventListener('keydown', function(event) {
+    document.querySelector('#message_input').addEventListener('keydown', function (event) {
         if (event.key === 'Enter') {
             sendMessageToChat();
         }
     });
     document.addEventListener('click', (e) => {
-        const dropdown=document.getElementById('participants_list');
-        const input = document.getElementById('message_input');
+        const dropdown = document.querySelector('#participants_list');
+        const input = document.querySelector('#message_input');
         if (!dropdown.contains(e.target) && e.target !== input) {
             dropdown.style.display = 'none';
         }
     });
     addMessageInputEventListener();
-    setSoundsVolume();
-},false);
+}, false);
 
 window.addEventListener("beforeunload", () => {
     document.querySelectorAll("[id^='remote_streams_']").forEach(el => el.remove());
@@ -1996,10 +1721,12 @@ window.addEventListener("beforeunload", () => {
     activeFeeds.clear();
     timeoutFeeds.clear();
     leave(false);
-    if(isLeaving){return;}
+    if (isLeaving) {
+        return;
+    }
     const data = new URLSearchParams({
         reason: 'RELOAD',
         csrf: csrfToken
     });
-    navigator.sendBeacon(window.location.href+"/leave?"+new URLSearchParams({reason:'RELOAD'}),data);
+    navigator.sendBeacon(window.location.href + "/leave?" + new URLSearchParams({reason: 'RELOAD'}), data);
 });

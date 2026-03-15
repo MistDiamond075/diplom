@@ -31,7 +31,7 @@ public class CtrlVideocalls {
 
     @GetMapping("/videocall/{id}/user/getData")
     public @ResponseBody DTOVideocallsHasUser getUserData(@PathVariable Long id, @AuthenticationPrincipal DiplomUserDetails userDetails) throws AccessException, EntityException {
-        return ConverterVideocallsHasUserToVideocallsHasUser.convertEntityToDTO(srvVideocalls.getVideocallsHasUserByUserDetailsAndVideocallId(userDetails,id));
+        return ConverterVideocallsHasUserToVideocallsHasUser.convertEntityToDTO(srvVideocalls.getVideocallHasUserByUserDetailsAndVideocallId(userDetails,id));
     }
 
     @GetMapping("/videocall/{id}/join")
@@ -57,7 +57,7 @@ public class CtrlVideocalls {
             @RequestParam(value = "action") ServiceVideocalls.UpdateActions action,
             @RequestParam(value = "state",required = false) EntVideocallsHasUser.defaultStates state,
             @AuthenticationPrincipal DiplomUserDetails userDetails
-    ) throws AccessException, EntityException, DataProcessingException {
+    ) throws AccessException, EntityException, DataProcessingException, ExecutionException, JanusAPIException, InterruptedException {
         return self ? srvVideocallsAsync.updateUserSelfByAction(id,action,state,userDetails) : srvVideocallsAsync.updateUserOtherByAction(id,userId,action,state,userDetails);
     }
 }

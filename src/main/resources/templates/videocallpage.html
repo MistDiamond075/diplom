@@ -27,13 +27,12 @@
             </div>
             <div class="control-panel">
                 <div class="videocall-setting-zone">
-                    <button type="button" id="microstate" class="control-button videocall-setting-button-off"
-                            onclick="updateMicrophoneState()">
+                    <button type="button" id="microstate" class="control-button videocall-setting-button-off" onclick="updateDeviceWithTracks(false)">
                     </button>
                     <span class="videocall-setting-header">Микрофон</span>
                 </div>
                 <div class="videocall-setting-zone">
-                    <button type="button" id="camstate" class="control-button videocall-setting-button-off" onclick="updateCameraState()"></button>
+                    <button type="button" id="camstate" class="control-button videocall-setting-button-off" onclick="updateDeviceWithTracks(true)"></button>
                     <span class="videocall-setting-header">Веб-камера</span>
                 </div>
                 <div class="videocall-setting-zone">
@@ -41,7 +40,7 @@
                     <span class="videocall-setting-header">Звук</span>
                 </div>
                 <div class="videocall-setting-zone">
-                    <button type="button" id="demostate" class="control-button videocall-setting-button-off" onclick="updateDemonstrationState()"></button>
+                    <button type="button" id="demostate" class="control-button videocall-setting-button-off" onclick="updateDevice(Actions.DEMONSTRATION)"></button>
                     <span class="videocall-setting-header">Демонстрация</span>
                 </div>
             </div>

@@ -11,7 +11,6 @@ import com.diplom.diplom.misc.utils.Parser;
 import com.diplom.diplom.repository.*;
 import jakarta.persistence.LockTimeoutException;
 import jakarta.transaction.Transactional;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.PessimisticLockingFailureException;
 import org.springframework.http.HttpStatus;
@@ -65,7 +64,7 @@ public class ServiceVideocalls {
         return rVideocalls.findAllByConferencesId_GroupIdIn(user.getGroups());
     }
 
-    public EntVideocallsHasUser getVideocallsHasUserByUserDetailsAndVideocallId(UserDetails userDetails, Long videocallId) throws EntityException, AccessException {
+    public EntVideocallsHasUser getVideocallHasUserByUserDetailsAndVideocallId(UserDetails userDetails, Long videocallId) throws EntityException, AccessException {
         if(userDetails==null){
             throw new AccessException(HttpStatus.BAD_REQUEST,"user details was null","Ошибка данных вашего аккаунта", null);
         }
@@ -94,7 +93,7 @@ public class ServiceVideocalls {
             backoff = @Backoff(delay = 200),
             maxAttempts = 5
     )
-    public EntVideocallsHasUser joinVideocalls(Long videocallId, DiplomUserDetails userDetails) throws AccessException, EntityException, URISyntaxException, ExecutionException, JanusAPIException, InterruptedException {
+    public EntVideocallsHasUser joinVideocall(Long videocallId, DiplomUserDetails userDetails) throws AccessException, EntityException, URISyntaxException, ExecutionException, JanusAPIException, InterruptedException {
         if(userDetails==null){
             throw new AccessException(HttpStatus.BAD_REQUEST,"user details was null","Ошибка данных вашего аккаунта", null);
         }
@@ -153,7 +152,7 @@ public class ServiceVideocalls {
             backoff = @Backoff(delay = 200),
             maxAttempts = 5
     )
-    public EntVideocallsHasUser leaveVideocalls(Long videocallId, LeaveReasons reason, DiplomUserDetails userDetails) throws AccessException, ExecutionException, InterruptedException, EntityException, JanusAPIException {
+    public EntVideocallsHasUser leaveVideocall(Long videocallId, LeaveReasons reason, DiplomUserDetails userDetails) throws AccessException, ExecutionException, InterruptedException, EntityException, JanusAPIException {
         if(userDetails==null){
             throw new AccessException(HttpStatus.BAD_REQUEST,"user details was null","Ошибка данных вашего аккаунта", null);
         }
@@ -291,36 +290,24 @@ public class ServiceVideocalls {
         EntVideocallsHasUser.defaultStates newstate= EntVideocallsHasUser.defaultStates.OFF;
         switch (action){
             case AUDIO -> {
-                if(videocallsHasUser.getMicrostate()== EntVideocallsHasUser.defaultStates.MUTED_BY_ADMIN) {
-                    if(properties!=null && !Checker.isUserMorePowerful(videocallsHasUser.getVideocalluserId(), properties.getMicromuted())){
-                        throw new AccessException(HttpStatus.BAD_REQUEST,"user with id "+videocallsHasUser.getVideocalluserId().getId()+ " trying to update his devices in videocall with id "+
-                                videocallsHasUser.getVideocallsId().getId()
-                                +" without enough role power","Ошибка доступа: недостаточно прав",userDetails);
-                    }
+                if(properties != null){
+                    checkModifyDeviceStateAccess(properties.getMicromuted(),videocallsHasUser.getMicrostate(),videocallsHasUser,action,userDetails);
                 }
                 updated= videocallsHasUser.getMicrostate()!=state;
                 videocallsHasUser.setMicrostate(state);
                 newstate=videocallsHasUser.getMicrostate();
             }
             case VIDEO -> {
-                if(videocallsHasUser.getCamstate()== EntVideocallsHasUser.defaultStates.MUTED_BY_ADMIN) {
-                    if(properties!=null && !Checker.isUserMorePowerful(videocallsHasUser.getVideocalluserId(), properties.getCameramuted())){
-                        throw new AccessException(HttpStatus.BAD_REQUEST,"user with id "+videocallsHasUser.getVideocalluserId().getId()+ " trying to update his "+action+" in videocall with id "+
-                                videocallsHasUser.getVideocallsId().getId()
-                                +" without enough role power","Ошибка доступа: недостаточно прав",userDetails);
-                    }
+                if(properties != null){
+                    checkModifyDeviceStateAccess(properties.getCameramuted(),videocallsHasUser.getCamstate(),videocallsHasUser,action,userDetails);
                 }
                 updated= videocallsHasUser.getCamstate()!=state;
                 videocallsHasUser.setCamstate(state);
                 newstate=videocallsHasUser.getCamstate();
             }
             case DEMONSTRATION -> {
-                if(videocallsHasUser.getDemostate()== EntVideocallsHasUser.defaultStates.MUTED_BY_ADMIN) {
-                    if(properties!=null && !Checker.isUserMorePowerful(videocallsHasUser.getVideocalluserId(), properties.getDemomuted())){
-                        throw new AccessException(HttpStatus.BAD_REQUEST,"user with id "+videocallsHasUser.getVideocalluserId().getId()+ " trying to update his "+action+" in videocall with id "+
-                                videocallsHasUser.getVideocallsId().getId()
-                                +" without enough role power","Ошибка доступа: недостаточно прав",userDetails);
-                    }
+                if(properties != null){
+                    checkModifyDeviceStateAccess(properties.getDemomuted(),videocallsHasUser.getDemostate(),videocallsHasUser,action,userDetails);
                 }
                 updated= true;
                 videocallsHasUser.setDemostate(
@@ -328,17 +315,9 @@ public class ServiceVideocalls {
                 );
                 newstate=videocallsHasUser.getDemostate();
             }
-            case REACTION -> {
-                //updated= videocallsHasUser.getSignalstate()!=state;
-               // videocallsHasUser.setSignalstate(state);
-            }
             case SOUND -> {
-                if(videocallsHasUser.getSoundstate()== EntVideocallsHasUser.defaultStates.MUTED_BY_ADMIN) {
-                     if(properties!=null && !Checker.isUserMorePowerful(videocallsHasUser.getVideocalluserId(), properties.getSoundmuted())){
-                         throw new AccessException(HttpStatus.BAD_REQUEST,"user with id "+videocallsHasUser.getVideocalluserId().getId()+ " trying to update his "+action+" in videocall with id "+
-                                 videocallsHasUser.getVideocallsId().getId()
-                                 +" without enough role power","Ошибка доступа: недостаточно прав",userDetails);
-                     }
+                if(properties != null){
+                    checkModifyDeviceStateAccess(properties.getSoundmuted(),videocallsHasUser.getSoundstate(),videocallsHasUser,action,userDetails);
                 }
                 updated= videocallsHasUser.getSoundstate()!=state;
                 videocallsHasUser.setSoundstate(state);
@@ -352,7 +331,7 @@ public class ServiceVideocalls {
     }
 
     @Transactional
-    public DTOVideocallUpdate updateUserOtherByAction(Long videocallId, Long userId, UpdateActions action, EntVideocallsHasUser.defaultStates state, DiplomUserDetails userDetails) throws AccessException, EntityException, DataProcessingException {
+    public DTOVideocallUpdate updateUserOtherByAction(Long videocallId, Long userId, UpdateActions action, EntVideocallsHasUser.defaultStates state, DiplomUserDetails userDetails) throws AccessException, EntityException, DataProcessingException, ExecutionException, JanusAPIException, InterruptedException {
         if(userDetails==null){
             throw new AccessException(HttpStatus.BAD_REQUEST,"user details was null","Ошибка данных вашего аккаунта", null);
         }
@@ -457,8 +436,11 @@ public class ServiceVideocalls {
                     isBanned=true;
                 }
             }
-            rVideocallsHasUser.save(videocallsHasUserUpdated);
+            EntVideocallsHasUser user=rVideocallsHasUser.save(videocallsHasUserUpdated);
             rVideocallsHasUserProperties.save(properties);
+            if(isBanned){
+                leaveVideocall(videocallId,LeaveReasons.EXIT,new DiplomUserDetails(user.getVideocalluserId(),false));
+            }
             return new DTOVideocallUpdate(videocallsHasUserUpdated,isBanned,newstate);
         }else{
             throw new AccessException(
@@ -472,5 +454,15 @@ public class ServiceVideocalls {
 
     public void updateUserConnectionStatus(Long userId,boolean connected){
         rVideocallsHasUser.updateConnectionStatus(userId,connected);
+    }
+
+    private void checkModifyDeviceStateAccess(int property,EntVideocallsHasUser.defaultStates state, EntVideocallsHasUser videocallsHasUser, UpdateActions action, DiplomUserDetails userDetails) throws AccessException {
+        if(state == EntVideocallsHasUser.defaultStates.MUTED_BY_ADMIN) {
+            if (!Checker.isUserMorePowerful(videocallsHasUser.getVideocalluserId(), property)) {
+                throw new AccessException(HttpStatus.BAD_REQUEST, "user with id " + videocallsHasUser.getVideocalluserId().getId() + " trying to update his " + action + " in videocall with id " +
+                        videocallsHasUser.getVideocallsId().getId()
+                        + " without enough role power", "Ошибка доступа: недостаточно прав", userDetails);
+            }
+        }
     }
 }

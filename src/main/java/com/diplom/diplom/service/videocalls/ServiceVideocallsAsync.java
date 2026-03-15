@@ -16,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import java.net.URISyntaxException;
@@ -44,7 +43,7 @@ public class ServiceVideocallsAsync {
 
     @Async
     public CompletableFuture<ResponseEntity<?>> joinVideocalls(Long videocallId, DiplomUserDetails userDetails) throws AccessException, EntityException, URISyntaxException, ExecutionException, JanusAPIException, InterruptedException {
-            EntVideocallsHasUser videocallsHasUser=srvVideocalls.joinVideocalls(videocallId, userDetails);
+            EntVideocallsHasUser videocallsHasUser=srvVideocalls.joinVideocall(videocallId, userDetails);
         return CompletableFuture.supplyAsync(() -> {
                     sendVideocallsHasUserParticipants(videocallsHasUser.getVideocallsId());
                     return ResponseEntity.ok().build();
@@ -72,7 +71,7 @@ public class ServiceVideocallsAsync {
 
     @Async
     public CompletableFuture<ResponseEntity<?>> leaveVideocall(Long videocallId, ServiceVideocalls.LeaveReasons reason, DiplomUserDetails userDetails) throws AccessException, ExecutionException, InterruptedException, EntityException, JanusAPIException {
-        EntVideocallsHasUser videocallsHasUser=srvVideocalls.leaveVideocalls(videocallId,reason, userDetails);
+        EntVideocallsHasUser videocallsHasUser=srvVideocalls.leaveVideocall(videocallId,reason, userDetails);
         return CompletableFuture.supplyAsync(() -> {
                     removeVideocallsHasUserParticipant(videocallsHasUser.getVideocalluserId().getId(),videocallsHasUser.getVideocallsId().getRoomId());
                     return ResponseEntity.ok().build();
@@ -124,7 +123,7 @@ public class ServiceVideocallsAsync {
     }
 
     @Async
-    public CompletableFuture<ResponseEntity<?>> updateUserOtherByAction(Long videocallId, Long userId, ServiceVideocalls.UpdateActions action, EntVideocallsHasUser.defaultStates state, DiplomUserDetails userDetails) throws AccessException, EntityException, DataProcessingException {
+    public CompletableFuture<ResponseEntity<?>> updateUserOtherByAction(Long videocallId, Long userId, ServiceVideocalls.UpdateActions action, EntVideocallsHasUser.defaultStates state, DiplomUserDetails userDetails) throws AccessException, EntityException, DataProcessingException, ExecutionException, JanusAPIException, InterruptedException {
         DTOVideocallUpdate videocallsHasUser=srvVideocalls.updateUserOtherByAction(videocallId, userId, action, state, userDetails);
         return CompletableFuture.supplyAsync(() -> {
                     sendUserOtherUpdate(videocallsHasUser.getVideocallsHasUser(),videocallsHasUser.getState(),action,(action== ServiceVideocalls.UpdateActions.AUDIO ||
