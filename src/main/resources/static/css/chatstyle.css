@@ -372,6 +372,7 @@ textarea{
     width: 100%;
 }
 .chat-message-file{
+    display: block;
     max-width: 250px;
     max-height: 200px;
     border-radius: 3px;

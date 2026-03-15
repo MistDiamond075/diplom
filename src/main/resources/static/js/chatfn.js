@@ -174,6 +174,36 @@ function loadChatData(chatId,page=0){
     }
 }
 
+function observeLazyElement(element) {
+    //console.log(element);
+    const chatContainer = document.querySelector('.messages-list');
+    const observer = new IntersectionObserver((entries, observer) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const lazyElement = entry.target;
+              //  console.log(lazyElement);
+                const src = lazyElement.getAttribute('data-src');
+                if (src) {
+                    lazyElement.src = src;
+                }
+
+                if (lazyElement.tagName === 'VIDEO' || lazyElement.tagName === 'AUDIO') {
+                    lazyElement.load();
+                }
+
+                lazyElement.classList.add('loaded');
+                observer.unobserve(lazyElement); 
+            }
+        });
+    }, {
+        root: chatContainer,
+        rootMargin: '0px 0px 200px 0px',
+        threshold: 0.01
+    });
+
+    observer.observe(element);
+}
+
 function addMessageToChat(msg,replyTo){
     const container=document.querySelector('.messages-list');
     const userId=Number(document.getElementById('user_id').value);
@@ -236,7 +266,6 @@ function addMessageToChat(msg,replyTo){
                     case 'image':{
                         docFile=document.createElement('img');
                         docFile.setAttribute('data-src',file.href);
-                        docFile.setAttribute('loading','lazy');
                     break;}
                     case 'video':{
                         docFile.setAttribute('data-src', file.href);
