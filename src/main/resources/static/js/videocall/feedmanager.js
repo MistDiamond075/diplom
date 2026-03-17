@@ -8,15 +8,15 @@ export class FeedManager{
         this.feedId_userId = new Map();
         this.userId_feedId = new Map();
         this.ownFeed= undefined;
-        this.IdTypes = {USER: 'User',FEED:'FEED'};
+        this.MapKey = {USER: 'User',FEED:'FEED'};
     }
 
     contains(idType,target){
         switch(idType){
-            case this.IdTypes.USER:{
+            case this.MapKey.USER:{
                 return this.userId_feedId.has(target);
             }
-            case this.IdTypes.FEED:{
+            case this.MapKey.FEED:{
                 return this.feedId_userId.has(target);
             }
         }
@@ -26,10 +26,10 @@ export class FeedManager{
 
     get(idType,target){
         switch(idType){
-            case this.IdTypes.USER:{
+            case this.MapKey.USER:{
                 return this.userId_feedId.get(target);
             }
-            case this.IdTypes.FEED:{
+            case this.MapKey.FEED:{
                 return this.feedId_userId.get(target);
             }
         }
@@ -47,10 +47,10 @@ export class FeedManager{
 
     add(idType,key, value){
         switch (idType){
-            case this.IdTypes.USER:{
+            case this.MapKey.USER:{
                 this.userId_feedId.set(key,value);
             break;}
-            case this.IdTypes.FEED:{
+            case this.MapKey.FEED:{
                 this.feedId_userId.set(key,value);
             break;}
             default:{
