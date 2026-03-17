@@ -162,7 +162,7 @@ public class ServiceVideocallsAsync {
                 .put("eventType","videocall")
                 .put("forced",false)
                 .put("id",userId);
-        WebSocketVideocall.broadcastParticipants(roomId,wsResponse.toString());
+        WebSocketVideocall.broadcast(roomId,wsResponse.toString());
     }
 
     @Async
@@ -209,17 +209,17 @@ public class ServiceVideocallsAsync {
                 .put("users",bodyUsersArray)
                 .put("messageArray",bodyMessagesArray);
         WebSocketVideocall.setParticipants(videocall.getRoomId(),wsResponse.toString());
-        WebSocketVideocall.broadcastParticipants(videocall.getRoomId(),wsResponse.toString());
+        WebSocketVideocall.broadcast(videocall.getRoomId(),wsResponse.toString());
     }
 
     @Async
     protected void sendUserUpdate(EntVideocallsHasUser videocallsHasUser, EntVideocallsHasUser.defaultStates state, ServiceVideocalls.UpdateActions action, boolean janus) {
-        WebSocketVideocall.broadcastParticipant(
+        WebSocketVideocall.send(
                 videocallsHasUser.getVideocallsId().getRoomId(),
                 videocallsHasUser.getVideocalluserId().getId(),
                 generateRequestForUserUpdates(action.toString().toLowerCase(), state == EntVideocallsHasUser.defaultStates.ON, state,janus,true,null).toString()
         );
-        WebSocketVideocall.broadcastParticipants(
+        WebSocketVideocall.broadcast(
                 videocallsHasUser.getVideocallsId().getRoomId(),
                 generateRequestForUserUpdates(action.toString().toLowerCase(), state== EntVideocallsHasUser.defaultStates.ON,state, janus,false,videocallsHasUser.getVideocalluserId().getId()).toString()
         );
@@ -233,14 +233,14 @@ public class ServiceVideocallsAsync {
                     .put("eventType","videocall")
                     .put("forced",true)
                     .put("id",videocallsHasUser.getVideocalluserId().getId());
-            WebSocketVideocall.broadcastParticipant(videocallsHasUser.getVideocallsId().getRoomId(),videocallsHasUser.getVideocalluserId().getId(),response.toString());
+            WebSocketVideocall.send(videocallsHasUser.getVideocallsId().getRoomId(),videocallsHasUser.getVideocalluserId().getId(),response.toString());
         }else {
-            WebSocketVideocall.broadcastParticipant(
+            WebSocketVideocall.send(
                     videocallsHasUser.getVideocallsId().getRoomId(),
                     videocallsHasUser.getVideocalluserId().getId(),
                     generateRequestForUserUpdates(action.toString().toLowerCase(), false,state, janus,true,null).toString()
             );
-            WebSocketVideocall.broadcastParticipants(
+            WebSocketVideocall.broadcast(
                videocallsHasUser.getVideocallsId().getRoomId(),
                generateRequestForUserUpdates(action.toString().toLowerCase(), state== EntVideocallsHasUser.defaultStates.ON,state, janus,false,videocallsHasUser.getVideocalluserId().getId()).toString()
             );

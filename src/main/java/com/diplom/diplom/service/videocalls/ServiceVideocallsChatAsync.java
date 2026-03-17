@@ -62,6 +62,6 @@ public class ServiceVideocallsChatAsync {
                 .put("surname",message.getVideocalluserId().getVideocalluserId().getSurname())
                 .put("replyToId",message.getReplyTo()==null ? JSONObject.NULL : message.getReplyTo())
                 .put("replyToName",message.getReplyToName()==null ? JSONObject.NULL : message.getReplyToName());
-        WebSocketVideocall.broadcastParticipants(message.getVideocalluserId().getVideocallsId().getRoomId(),msg.toString());
+        WebSocketVideocall.broadcast(message.getVideocalluserId().getVideocallsId().getRoomId(),msg.toString());
     }
 }

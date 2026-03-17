@@ -32,7 +32,7 @@ public class WebSocketVideocall extends WebSocketServer {
     private static final int maxPongMisses = 3;
     private static ServiceVideocalls srvVideocallsHasUser;
     private static ServiceVideocallsAsync srvVideocallsAsync;
-    private static Logger logger= LoggerFactory.getLogger(WebSocketVideocall.class.getName());
+    private static final Logger logger= LoggerFactory.getLogger(WebSocketVideocall.class.getName());
 
     public WebSocketVideocall(int port) {
         super(new InetSocketAddress(port));
@@ -59,7 +59,7 @@ public class WebSocketVideocall extends WebSocketServer {
         }
     }
 
-    public static void broadcastParticipants(Long room_id,String participantJson) {
+    public static void broadcast(Long room_id, String participantJson) {
         if(room_id!=null) {
             if(!roomId_connections.containsKey(room_id)) {
                 return;
@@ -82,7 +82,7 @@ public class WebSocketVideocall extends WebSocketServer {
         }
     }
 
-    public static void broadcastParticipant(Long room_id,Long user_id,String participantJson) {
+    public static void send(Long room_id, Long user_id, String participantJson) {
         if(room_id!=null && user_id!=null) {
             ConcurrentHashMap<Long,WebSocket> connections=roomId_connections.get(room_id);
             if(connections==null) {

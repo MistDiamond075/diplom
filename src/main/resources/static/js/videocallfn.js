@@ -1,4 +1,9 @@
+import {sounds, defaultStates, Actions, iconsVideocallUrl} from "./videocall/constants.js";
+import  {FeedManager} from "./videocall/feedmanager.js";
+import {CONFIG} from "./videocall/config.js";
+
 let janus = null;
+const feedManager = new FeedManager();
 let subscriberHandle = new Map();
 let opaqueId;
 let roomId;
@@ -9,33 +14,14 @@ let devices_start_state_updated = false;
 let isDemonstrationActive = false;
 let ws;
 let wsKeylogger = null;
-let window_count = 0;
-let contentwindow_aspectratio = new Map();
+let debugDisplayReplacement=false
 var debugHandle;
-const timeoutFeeds = new Map();
-const activeFeeds = new Set();
-const max_active_feeds = 1;
-const userId_feedId = new Map;
-const feedId_userId = new Map();
-const Actions = {MICROPHONE: 'AUDIO', CAMERA: 'VIDEO', BAN: 'BAN', SOUND: 'SOUND', DEMONSTRATION: 'DEMONSTRATION'};
-const defaultStates = {OFF: 'OFF', ON: 'ON', MUTED_BY_ADMIN: 'MUTED_BY_ADMIN'};
-const iconsVideocallUrl = '/files/icons/videocall';
-const sounds = {
-    DEMOSTART: new Audio('/files/sound/videocall/demo_start.wav'),
-    DEMOEND: new Audio('/files/sound/videocall/demo_end.wav'),
-    VOICESTART: new Audio('/files/sound/videocall/voice_start.wav'),
-    VOICEEND: new Audio('/files/sound/videocall/voice_end.wav'),
-    JOIN: new Audio('/files/sound/videocall/join.wav'),
-    LEAVE: new Audio('/files/sound/videocall/leave.wav')
-};
 
-sounds.JOIN.playbackRate = 1.3;
-
-function isStringDefaultStates(str) {
+function isDefaultState(str) {
     return Object.values(defaultStates).includes(str);
 }
 
-function parseDefaultStateFromString(str) {
+function parseDefaultState(str) {
     if (str.toString() === 'muted') {
         str = `${str}_by_admin`;
     }
@@ -49,7 +35,7 @@ function parseDefaultStateFromString(str) {
 }
 
 function connectToVideocallWs(room_id, user_id, videoroomHandle) {
-    const ws_addr = "wss://192.168.0.102:60600";//"wss://5.189.10.253:60600";//"wss://192.168.0.106:60600";
+    const ws_addr = CONFIG.ws;
     ws = new WebSocket(ws_addr);
     console.log('server WS started');
 
@@ -63,7 +49,7 @@ function connectToVideocallWs(room_id, user_id, videoroomHandle) {
         ws.send(JSON.stringify(request));
     }
 
-    ws.onmessage = function (event) {
+    ws.onmessage = async function (event) {
         const jsdata = JSON.parse(event.data);
         console.log(jsdata);
         if (jsdata.eventType === "videocall") {
@@ -73,26 +59,23 @@ function connectToVideocallWs(room_id, user_id, videoroomHandle) {
                 const participants = jsdata.users;
                 participants.forEach(participant => {
                     createUserParticipantBlock(participant);
-                    if (userId_feedId.has(participant.id)) {
-                        updateUserDisplay(userId_feedId.get(participant.id), participant.camera === defaultStates.ON);
-                    }
+                    updateUserDisplay(feedManager.get(feedManager.IdTypes.USER, participant.id), participant.camera === defaultStates.ON);
                 });
                 const messages = jsdata.messageArray;
                 messages.forEach(msg => {
                     addMessageToChat(msg, user_id);
                 });
-                sounds.JOIN.play();
+                await sounds.JOIN.play();
             } else if (jsdata.event === "disconnected") {
                 if (jsdata.forced) {
                     leave(true);
+                    return;
                 }
-                if (userId_feedId.has(jsdata.id)) {
-                    if (subscriberHandle.has(userId_feedId.get(jsdata.id))) {
-                        unsubscribeFromPublisher(subscriberHandle.get(userId_feedId.get(jsdata.id)));
-                    }
-                }
+                unsubscribeFromPublisher(subscriberHandle.get(
+                    feedManager.get(feedManager.IdTypes.USER, jsdata.id)
+                ));
                 document.querySelector(`#user_${jsdata.id}`)?.remove();
-                sounds.LEAVE.play();
+                await sounds.LEAVE.play();
             } else if (jsdata.event === "chatmsg") {
                 addMessageToChat(jsdata, user_id);
             } else if (jsdata.event === "configure") {
@@ -118,7 +101,7 @@ function connectToVideocallWs(room_id, user_id, videoroomHandle) {
                         if (jsdata.data.message.sound !== undefined) {
                             console.log('muted');
                             isSoundMuted = jsdata.data.state !== defaultStates.ON;
-                            userId_feedId.forEach(value => {
+                            feedManager.userId_feedId.forEach(value => {
                                 const element = document.querySelector(`#${value}_audio`);
                                 console.log(element);
                                 console.log(isSoundMuted);
@@ -129,7 +112,7 @@ function connectToVideocallWs(room_id, user_id, videoroomHandle) {
                         } else if (jsdata.data.message.demonstration !== undefined) {
                             if (jsdata.data.state !== defaultStates.MUTED_BY_ADMIN) {
                                 if (jsdata.data.state === defaultStates.ON || jsdata.data.state === defaultStates.OFF && isDemonstrationActive) {
-                                    ScreenSharing(videoroomHandle, jsdata.data.state === defaultStates.ON);
+                                    await ScreenSharing(videoroomHandle, jsdata.data.state === defaultStates.ON);
                                 }
                             }
                         }
@@ -152,40 +135,7 @@ function connectToVideocallWs(room_id, user_id, videoroomHandle) {
                         if (jsdata.data.message.video !== undefined) {
                             updateParticipantPropertiesIcons(participant, jsdata.data.state, Actions.CAMERA);
                             console.log(userId);
-                            if (userId_feedId.has(userId)) {
-                                if (jsdata.data.state !== defaultStates.ON && activeFeeds.has(userId_feedId.get(userId))) {
-                                    activeFeeds.delete(userId_feedId.get(userId));
-                                    if (activeFeeds.size < max_active_feeds) {
-                                        const users = document.querySelectorAll('[class*="user-participant"]');
-                                        users.forEach(user => {
-                                            console.log(activeFeeds.size);
-                                            if (activeFeeds.size >= max_active_feeds) {
-                                                return;
-                                            }
-                                            const state = getParticipantSettingState(user, 'cam');
-                                            console.log(state);
-                                            if (state !== null) {
-                                                if (parseDefaultStateFromString(state) === defaultStates.ON) {
-                                                    const userId = Number(user.id.substring(user.id.indexOf('_') + 1));
-                                                    if (userId_feedId.has(userId)) {
-                                                        toggleVideo(userId_feedId.get(userId), true);
-                                                        activeFeeds.add(userId_feedId.get(userId));
-                                                    }
-                                                }
-                                            }
-                                        });
-                                    }
-                                }
-                                if (activeFeeds.size < max_active_feeds || activeFeeds.has(userId_feedId.get(userId))) {
-                                    if (!activeFeeds.has(userId_feedId.get(userId))) {
-                                        if (jsdata.data.state === defaultStates.ON) {
-                                            activeFeeds.add(userId_feedId.get(userId));
-                                        }
-                                    }
-                                    console.log('TOGGLING VIDEO WITH REWUEST');
-                                    toggleVideo(userId_feedId.get(userId), jsdata.data.state === defaultStates.ON);
-                                }
-                            }
+                           await manageActiveFeeds(userId,jsdata);
                         } else if (jsdata.data.message.audio !== undefined) {
                             updateParticipantPropertiesIcons(participant, jsdata.data.state, Actions.MICROPHONE);
                         } else if (jsdata.data.message.sound !== undefined) {
@@ -197,38 +147,7 @@ function connectToVideocallWs(room_id, user_id, videoroomHandle) {
                             } else if (jsdata.data.state === defaultStates.OFF) {
                                 sounds.DEMOEND.play().catch(err => console.warn('Autoplay block?', err));
                             }
-                            if (userId_feedId.has(userId)) {
-                                if (jsdata.data.state !== defaultStates.ON && activeFeeds.has(userId_feedId.get(userId))) {
-                                    activeFeeds.delete(userId_feedId.get(userId));
-                                    if (activeFeeds.size < max_active_feeds) {
-                                        const users = document.querySelectorAll('[class*="user-participant"]');
-                                        users.forEach(user => {
-                                            console.log(activeFeeds.size);
-                                            if (activeFeeds.size >= max_active_feeds) {
-                                                return;
-                                            }
-                                            const state = getParticipantSettingState(user, 'cam');
-                                            console.log(state);
-                                            if (state !== null) {
-                                                if (parseDefaultStateFromString(state) === defaultStates.ON) {
-                                                    const userId = Number(user.id.substring(user.id.indexOf('_') + 1));
-                                                    if (userId_feedId.has(userId)) {
-                                                        toggleVideo(userId_feedId.get(userId), true);
-                                                        activeFeeds.add(userId_feedId.get(userId));
-                                                    }
-                                                }
-                                            }
-                                        });
-                                    }
-                                }
-                                if (activeFeeds.size < max_active_feeds || activeFeeds.has(userId_feedId.get(userId))) {
-                                    if (!activeFeeds.has(userId_feedId.get(userId))) {
-                                        activeFeeds.add(userId_feedId.get(userId));
-                                    }
-                                    console.log('TOGGLING DEMO WITH REWUEST');
-                                    toggleVideo(userId_feedId.get(userId), jsdata.data.state === defaultStates.ON);
-                                }
-                            }
+                           await manageActiveFeeds(userId,jsdata);
                         }
                     }
                 }
@@ -244,6 +163,38 @@ function connectToVideocallWs(room_id, user_id, videoroomHandle) {
             userId: user_id
         };
         ws.send(JSON.stringify(request));
+    }
+}
+
+async function manageActiveFeeds(userId, jsdata) {
+    const feedId = feedManager.get(feedManager.get(feedManager.IdTypes.USER, userId));
+    if (feedId) {
+        if (jsdata.data.state !== defaultStates.ON && feedManager.isActive(feedId)) {
+            feedManager.removeActive(feedId);
+            if (feedManager.checkActiveMax('lt')) {
+                const users = document.querySelectorAll('[class*="user-participant"]');
+                users.forEach(user => {
+                    if (feedManager.checkActiveMax('gte')) {
+                        return;
+                    }
+                    const state = getParticipantSettingState(user, 'cam');
+                    console.log(state);
+                    if (state !== null) {
+                        if (parseDefaultState(state) === defaultStates.ON) {
+                            toggleVideo(feedId, true);
+                            feedManager.addActive(feedId);
+                        }
+                    }
+                });
+            }
+        }
+        if (feedManager.checkActiveMax('lt') || feedManager.isActive(feedId)) {
+            if (!feedManager.isActive(feedId)) {
+                feedManager.addActive(feedId);
+            }
+            console.log('TOGGLING DEMO WITH REWUEST');
+            await toggleVideo(feedId, jsdata.data.state === defaultStates.ON);
+        }
     }
 }
 
@@ -270,13 +221,11 @@ function createUserParticipantBlock(participant) {
         div3.appendChild(img);
         div3.appendChild(span);
         const element = createSettingsBlock(div1, participant);
-        console.log('map has key:' + userId_feedId.has(participant.id));
-        if (userId_feedId.has(participant.id)) {
-            const feedId = userId_feedId.get(participant.id);
+        const feedId=feedManager.get(feedManager.IdTypes.USER, participant.id);
+        console.log('map has key:' + feedId);
+        if (feedId) {
             const img = document.querySelector(`#${feedId}_image`);
-            console.log(feedId);
             if (img) {
-                console.log('adding src');
                 img.src = `/useravatar/${participant.id}`;
             }
         }
@@ -450,15 +399,15 @@ function addMessageToChat(msg, userId) {
     }
 }
 
-function updateUserSettings(status, action, self, userId = null) {
+async function updateUserSettings(status, action, self, userId = null) {
     let state;
-    console.log('status: ' + status, isStringDefaultStates(status));
-    if (isStringDefaultStates(status)) {
+    console.log('status: ' + status, isDefaultState(status));
+    if (isDefaultState(status)) {
         state = status;
     } else {
         state = status !== null ? (status ? 'ON' : 'OFF') : status;
     }
-    let url = window.location.href + '/user/update?';
+    let url = `${window.location.href}/user/update?`;
     const searchParams = new URLSearchParams({action: action.toUpperCase(), self: self});
     if (userId !== null) {
         searchParams.append('userUpdatedId', userId);
@@ -468,47 +417,41 @@ function updateUserSettings(status, action, self, userId = null) {
     }
     url += searchParams;
     console.log(url);
-    fetch(url, {
+    const response = fetch(url, {
         method: 'post',
         headers: {[csrfHeader]: csrfToken}
-    }).then(response => {
-        if (!response.ok) {
-            let js = response.json();
-            js.then(msg => showInfoMessage(msg.message));
-            return;
-        }
-        return response.json();
-    }).then(data => {
+    });
+    if (!response.ok) {
+        let js = response.json();
+        const msg = await js;
+        showInfoMessage(msg.message);
+    }else{
+        const data = await response.json();
         console.log(data);
         if (self) {
-            if (data) {
                 isSoundMuted = data !== 'ON';
-            }
         }
-    });
+    }
 }
 
 function setControlButtonIcon(state, id) {
     const element = document.querySelector(`#${id}`);
-    if (!element) {
-        return;
-    }
-    element.classList.remove(state === 'ON' ? 'videocall-setting-button-off' : "videocall-setting-button-on");
-    element.classList.add(state === 'ON' ? 'videocall-setting-button-on' : 'videocall-setting-button-off');
+    element?.classList.remove(state === 'ON' ? 'videocall-setting-button-off' : "videocall-setting-button-on");
+    element?.classList.add(state === 'ON' ? 'videocall-setting-button-on' : 'videocall-setting-button-off');
     if (state.toString().includes('MUTED')) {
         state = 'MUTED';
     }
-    element.classList.forEach(name => {
+    element?.classList.forEach(name => {
         if (name.includes(id)) {
-            element.classList.remove(name);
+            element?.classList.remove(name);
         }
     });
-    element.classList.add(id + '-' + state.toString().toLowerCase());
+    element?.classList.add(id + '-' + state.toString().toLowerCase());
 }
 
 function lightUser(feedId, state) {
-    if (feedId_userId.has(feedId)) {
-        const userId = feedId_userId.get(feedId);
+    const userId = feedManager.get(feedManager.IdTypes.FEED, feedId);
+    if (userId) {
         const userBlock = document.querySelector(`#user_${userId}`);
         if (userBlock) {
             userBlock.style['border-color'] = state ? '#43db06' : '#304926';
@@ -516,7 +459,7 @@ function lightUser(feedId, state) {
     }
 }
 
-function sendMessageToChat() {
+async function sendMessageToChat() {
     const text = document.querySelector('#message_input').value;
     if (text === '' || !text) {
         console.error('message cannot be empty');
@@ -537,69 +480,59 @@ function sendMessageToChat() {
         text: text,
         replyTo: replyTo
     };
-    fetch(window.location.href + '/addMessage', {
+    const response = fetch(window.location.href + '/addMessage', {
         method: 'post',
         headers: {'Content-Type': 'application/json', [csrfHeader]: csrfToken},
         body: JSON.stringify(senddate)
-    }).then(response => {
-        if (!response.ok) {
-            let js = response.json();
-            js.then(msg => showInfoMessage(msg.message))
-            return;
-        } else {
-            console.log('done');
-        }
-        return response.json();
-    }).then(data => {
+    });
+    let data = await response.json();
+    if (!response.ok) {
+        const msg = await data;
+        showInfoMessage(msg.message)
+    } else {
         console.log(data);
         document.querySelector('#message_input').value = '';
-    });
+    }
 }
 
-function join() {
-    const serverUrl = "wss://5.189.10.253:60859" //"wss://192.168.0.104:60859";
+async function join() {
     let username;
     let user_id;
     let microstate = false;
     let camerastate = false;
 
-    createDialogWindow().then(function (confirmed) {
-        if (!confirmed) {
-            window.location.href = '/conferences';
+    const confirmed = await createDialogWindow();
+    if (!confirmed) {
+        window.location.href = '/conferences';
+        return;
+    }
+    const response = await fetch(window.location.href + '/join', {
+        method: 'get'
+    });
+    if (!response.ok) {
+        const msg = await response.json();
+        showInfoMessage(msg.message);
+        return;
+    }
+    await init();
+
+    async function init() {
+        const response = fetch(window.location.href + '/user/getData', {
+            method: 'get'
+        });
+        if (!response.ok) {
+            console.log('error');
             return;
         }
-
-        fetch(window.location.href + '/join', {
-            method: 'get'
-        }).then(response => {
-            if (!response.ok) {
-                let js = response.json();
-                js.then(msg => showInfoMessage(msg.message))
-                return;
-            }
-            init();
-        });
-    });
-
-    function init() {
-        fetch(window.location.href + '/user/getData', {
-            method: 'get'
-        }).then(response => {
-            if (!response.ok) {
-                console.log('error');
-                return;
-            } else {
-                console.log('done');
-            }
-            return response.json();
-        }).then(data => {
+        try {
+            const data = await response.json();
             roomId = data.videocallsId.roomId;
             username = data.videocalluserId.id.toString();
             user_id = data.videocalluserId.id;
             microstate = data.microstate;
             camerastate = data.camstate;
             console.log(data);
-            opaqueId = 'videoroom-' + roomId;
+            opaqueId = `videoroom-${roomId}`;
             if (!devices_start_state_updated) {
                 setControlButtonIcon(data.soundstate, 'soundstate');
                 setControlButtonIcon(data.demostate, 'demostate');
@@ -607,20 +540,19 @@ function join() {
                 setControlButtonIcon(camerastate, 'camstate');
             }
             Janus.init({
-              //  debug: "all",
+                //  debug: "all",
                 callback: function () {
-                    startJanus(roomId, username, opaqueId, serverUrl, parseDefaultStateFromString(microstate), parseDefaultStateFromString(camerastate), user_id);
+                    startJanus(roomId, username, opaqueId, parseDefaultState(microstate), parseDefaultState(camerastate), user_id);
                 }
             });
-        })
-            .catch(err => console.error(err));
+        }catch (e) {
+            console.error(e);
+        }
     }
 }
 
-function startJanus(roomId, username, opaqueId, serverUrl, microstate = defaultStates.OFF, camerastate = defaultStates.OFF, user_id) {
+function startJanus(roomId, username, opaqueId, microstate = defaultStates.OFF, camerastate = defaultStates.OFF, user_id) {
     let videoroomHandle;
-    let ownFeedId;
-
     function generateTurnCredentials(secret) {
         const unixTimeStamp = Math.floor(Date.now() / 1000) + 3600;
         const username = `${unixTimeStamp}`;
@@ -628,13 +560,13 @@ function startJanus(roomId, username, opaqueId, serverUrl, microstate = defaultS
         return {username, credential: password};
     }
 
-    const {username: turnUsername, credential: turnCredential} = generateTurnCredentials("mn0dye2k54");
+    const {username: turnUsername, credential: turnCredential} = generateTurnCredentials(CONFIG.turn.secret);
     janus = new Janus({
-        server: serverUrl,
+        server:  CONFIG.janusServerWs,
         iceServers: [
-            {urls: "stun:5.189.10.253:60868"/*"stun:192.168.0.105:60868"*/},
+            {urls: CONFIG.stun},
             {
-                urls: "turn:5.189.10.253:60868?transport=udp"/*"turn:192.168.0.105:60868?transport=udp"*/,
+                urls: CONFIG.turn.urls,
                 username: turnUsername,
                 credential: turnCredential
             }
@@ -654,92 +586,70 @@ function startJanus(roomId, username, opaqueId, serverUrl, microstate = defaultS
                     };
                     videoroomHandle.send({message: register});
                 },
-                onmessage: function (msg, jsep) {
+                onmessage: async function (msg, jsep) {
                     console.log("Received message:", msg);
                     if (msg.videoroom === "joined") {
                         connectToVideocallWs(roomId, user_id, videoroomHandle);
-                        ownFeedId = msg.id;
+                        feedManager.ownFeed = msg.id;
                         const publishers = msg.publishers || [];
 
-                        /*createDialogWindow().then(function (confirmed) {
-                            if(!confirmed){
-                                leave();
-                                return;
-                            }*/
-
                         if (publishers.length === 0) {
-                            publishOwnFeed(videoroomHandle, user_id);
+                            await publishOwnFeed(videoroomHandle, user_id);
                         } else {
                             for (let i = 0; i < publishers.length; i++) {
                                 const publisher = publishers[i];
                                 const display = publisher.display;
-                                if (publisher.id !== ownFeedId) {
+                                if (publisher.id !== feedManager.ownFeed) {
                                     console.log("👤 Новый участник:", display + ' ' + publisher.id);
-                                    userId_feedId.set(Number(publisher.display), publisher.id);
-                                    feedId_userId.set(publisher.id, Number(publisher.display));
-                                    console.log(publisher.id, activeFeeds.size);
-                                    if (activeFeeds.size < max_active_feeds || activeFeeds.has(publisher.id)) {
-                                        console.log('TOGGLING VIDEO ' + publisher.id);
-                                        subscribeToPublisher(publisher.id, true);
-                                        activeFeeds.add(publisher.id);
-                                    } else {
-                                        subscribeToPublisher(publisher.id, false);
-                                    }
+                                    subscribe(publisher);
                                 }
                             }
-                            publishOwnFeed(videoroomHandle);
+                            await publishOwnFeed(videoroomHandle);
                         }
-                        // });
                     }
 
                     if (msg.videoroom === "talking") {
                         const talkingFeedId = msg.id;
-                        if (talkingFeedId === ownFeedId) {
+                        if (talkingFeedId === feedManager.ownFeed) {
                             return;
                         }
-                        if (activeFeeds.size >= max_active_feeds) {
-                            let oldest = null;
-                            for (const [id, entry] of Object.entries(activeFeeds)) {
-                                if (!oldest || entry.date < oldest.date) {
-                                    oldest = {id, ...entry};
-                                }
-                            }
-                            if (oldest !== null) {
-                                toggleVideo(talkingFeedId, false);
-                                activeFeeds.delete(id);
+                        if (feedManager.checkActiveMax('gte')) {
+                            let oldest = feedManager.getOldest();
+                            if (oldest) {
+                                await toggleVideo(talkingFeedId, false);
+                                feedManager.removeActive(id);
                             }
                         }
-                        activeFeeds.add(talkingFeedId);
-                        const userId = feedId_userId.get(talkingFeedId);
-                        if (parseDefaultStateFromString(getParticipantSettingState(`user_${userId}`, 'cam')) === defaultStates.ON) {
-                            toggleVideo(talkingFeedId, true);
+                        feedManager.addActive(talkingFeedId);
+                        const userId = feedManager.get(feedManager.IdTypes.FEED,talkingFeedId);
+                        const container=document.querySelector(`#user_${userId}`);
+                        if (parseDefaultState(getParticipantSettingState(container, 'cam')) === defaultStates.ON) {
+                            await toggleVideo(talkingFeedId, true);
                         }
-                        if (timeoutFeeds.has(talkingFeedId)) {
-                            clearTimeout(timeoutFeeds.get(talkingFeedId).entries().next().value[0]);
-                            timeoutFeeds.delete(talkingFeedId);
-                        }
+                        feedManager.removeTimeout(talkingFeedId);
                         lightUser(talkingFeedId, true);
                     }
 
                     if (msg.videoroom === "stopped-talking") {
                         const feedId = msg.id;
-                        if (feedId === ownFeedId) {
+                        if (feedId === feedManager.ownFeed) {
                             return;
                         }
 
-                        if (subscriberHandle.has(feedId) && activeFeeds.has(feedId)) {
-                            if (activeFeeds.size > max_active_feeds) {
+                        if (subscriberHandle.has(feedId) && feedManager.isActive(feedId)) {
+                            if (feedManager.checkActiveMax('gt')) {
                                 console.log('UNSUBBED');
                                 const timeout = setTimeout(() => {
                                     console.log('TIMEOUT');
-                                    const userId = feedId_userId.get(feedId);
-                                    if (parseDefaultStateFromString(getParticipantSettingState('user_' + userId, 'cam')) === defaultStates.ON) {
+                                    const userId = feedManager.get(feedManager.IdTypes.FEED,feedId);
+                                    const container=document.querySelector(`#user_${userId}`);
+                                    if (parseDefaultState(getParticipantSettingState(container, 'cam')) === defaultStates.ON) {
                                         toggleVideo(feedId, false);
                                     }
-                                    timeoutFeeds.delete(feedId);
+                                    feedManager.removeTimeout(feedId);
                                 }, 5000);
 
-                                timeoutFeeds.set(feedId, new Map().set(timeout, Date.now()));
+                                feedManager.addTimeout(feedId,timeout);
                             }
                             lightUser(feedId, false);
                         }
@@ -748,31 +658,26 @@ function startJanus(roomId, username, opaqueId, serverUrl, microstate = defaultS
                     if (msg.videoroom === "event") {
                         if (msg.leaving || msg.unpublished) {
                             const leavingFeed = msg.leaving || msg.unpublished;
-                            if (leavingFeed === ownFeedId) {
+                            if (leavingFeed === feedManager.ownFeed) {
                                 return;
                             }
                             unsubscribeFromPublisher(leavingFeed);
-                            if (feedId_userId.has(leavingFeed)) {
-                                const userId = feedId_userId.get(leavingFeed);
-                                feedId_userId.delete(leavingFeed);
-                                if (userId_feedId.has(userId)) {
-                                    userId_feedId.delete(userId);
-                                }
-                            }
+                            const userId = feedManager.get(feedManager.IdTypes.FEED,leavingFeed);
+                            feedManager.remove(leavingFeed,userId);
                             const users = document.querySelectorAll('[class*="user-participant"]');
                             users.forEach(user => {
-                                console.log(activeFeeds.size);
-                                if (activeFeeds.size >= max_active_feeds) {
+                                if (feedManager.checkActiveMax('gte')) {
                                     return;
                                 }
                                 const state = getParticipantSettingState(user, 'cam');
                                 console.log(state);
                                 if (state !== null) {
-                                    if (parseDefaultStateFromString(state) === defaultStates.ON) {
+                                    if (parseDefaultState(state) === defaultStates.ON) {
                                         const userId = Number(user.id.substring(user.id.indexOf('_') + 1));
-                                        if (userId_feedId.has(userId)) {
-                                            toggleVideo(userId_feedId.get(userId), true);
-                                            activeFeeds.add(userId_feedId.get(userId));
+                                        const feedId = feedManager.get(feedManager.IdTypes.USER,userId);
+                                        if (feedId) {
+                                            toggleVideo(feedId, true);
+                                            feedManager.addActive(feedId);
                                         }
                                     }
                                 }
@@ -783,26 +688,18 @@ function startJanus(roomId, username, opaqueId, serverUrl, microstate = defaultS
                             for (let i = 0; i < publishers.length; i++) {
                                 const publisher = publishers[i];
                                 console.log("📡 Новый опубликованный поток:", publisher.display, publisher.id);
-                                if (publisher.id === ownFeedId) {
+                                if (publisher.id === feedManager.ownFeed) {
                                     return;
                                 }
                                 if (!subscriberHandle.has(publisher.id)) {
-                                    userId_feedId.set(Number(publisher.display), publisher.id);
-                                    feedId_userId.set(publisher.id, Number(publisher.display));
-                                    if (activeFeeds.size < max_active_feeds || activeFeeds.has(publisher.id)) {
-                                        console.log('TOGGLING VIDEO ' + publisher.id);
-                                        subscribeToPublisher(publisher.id, true);
-                                        activeFeeds.add(publisher.id);
-                                    } else {
-                                        subscribeToPublisher(publisher.id, false);
-                                    }
+                                    subscribe(publisher);
                                 }
                             }
                         }
                         if (msg.configured === "ok" && !devices_start_state_updated) {
                             devices_start_state_updated = true;
-                            updateDeviceWithTracks(false,microstate);
-                            updateDeviceWithTracks(true,camerastate);
+                            updateDeviceWithTracks(false, microstate);
+                            updateDeviceWithTracks(true, camerastate);
                         }
                     }
 
@@ -813,26 +710,21 @@ function startJanus(roomId, username, opaqueId, serverUrl, microstate = defaultS
             });
         }
     });
+}
 
-    function isUserAbleToTalk(feedId) {
-        if (feedId_userId.has(feedId)) {
-            const userId = feedId_userId.get(feedId);
-            const userParticipant = document.querySelector(`#user_${userId}`);
-            if (userParticipant) {
-                const micState = getParticipantSettingState(userParticipant, 'mic');
-                if (parseDefaultStateFromString(micState) === defaultStates.ON) {
-                    console.log('talking allowed');
-                    return true;
-                }
-            }
-            console.log('talk user: ' + userId);
-        }
-        console.log('🛑 Игнор talking: микрофон пользователя выключен');
-        return false;
+function subscribe(publisher){
+    feedManager.add(feedManager.IdTypes.USER, Number(publisher.display), publisher.id);
+    feedManager.add(feedManager.IdTypes.FEED, publisher.id, Number(publisher.display));
+    if (feedManager.checkActiveMax('lt') || feedManager.isActive(publisher.id)) {
+        console.log('TOGGLING VIDEO ' + publisher.id);
+        subscribeToPublisher(publisher.id, true);
+        feedManager.addActive(publisher.id);
+    } else {
+        subscribeToPublisher(publisher.id, false);
     }
 }
 
-function toggleVideo(feedId, visible) {
+async function toggleVideo(feedId, visible) {
     console.log(getCallerFunctionName());
     const handle = subscriberHandle.get(feedId);
     console.log(feedId, handle);
@@ -846,12 +738,10 @@ function toggleVideo(feedId, visible) {
         tracks?.forEach(track => track.enabled = visible);
         if (visible) {
             try {
-                videoElement?.play().then(() => {
-                    console.log("✅ Видео воспроизводится");
-                }).catch(err => {
-                    console.warn("❌ Не удалось запустить видео:", err);
-                });
+                await videoElement?.play();
+                console.log("✅ Видео воспроизводится");
             } catch (e) {
+                console.error("❌ Не удалось запустить видео: ",e);
                 showInfoMessage("Ошибка воспроизведения видео");
             }
         }
@@ -906,27 +796,27 @@ function connectToKeyloggerWebsocket(keys, sender, track, user_id) {
             reconnectDelay = 2000;
         }
 
-        localWs.onmessage = function (event) {
+        localWs.onmessage = async function (event) {
             const jsdata = JSON.parse(event.data);
             if (jsdata.event === 'ping') {
                 const resp = {event: 'pong'};
                 localWs.send(JSON.stringify(resp));
             } else if (jsdata.event === 'pressed') {
-                sender.replaceTrack(track);
-                if (parseDefaultStateFromString(getParticipantSettingState(user, 'mic')) === defaultStates.ON) {
-                    sounds.VOICESTART.play();
+                await sender.replaceTrack(track);
+                if (parseDefaultState(getParticipantSettingState(user, 'mic')) === defaultStates.ON) {
+                    await sounds.VOICESTART.play();
                 }
             } else if (jsdata.event === 'released') {
-                sender.replaceTrack(null);
-                if (parseDefaultStateFromString(getParticipantSettingState(user, 'mic')) === defaultStates.ON) {
-                    sounds.VOICEEND.play();
+                await sender.replaceTrack(null);
+                if (parseDefaultState(getParticipantSettingState(user, 'mic')) === defaultStates.ON) {
+                    await sounds.VOICEEND.play();
                 }
             } else if (jsdata.event === 'shutdown') {
                 localWs.close();
             }
         }
 
-        localWs.onclose = (e) => {
+        localWs.onclose = () => {
             if (localWs.readyState === WebSocket.CLOSED && !isLeaving) {
                 const iframe = document.createElement('iframe');
                 iframe.style.display = 'none';
@@ -968,85 +858,80 @@ function createDummyVideoTrack() {
     return stream.getVideoTracks()[0];
 }
 
-function publishOwnFeed(videoroomHandle, user_id) {
-    navigator.mediaDevices.enumerateDevices()
-        .then(function (devices) {
-            const hasAudio = devices.some(device => device.kind === 'audioinput');
-            const hasVideo = devices.some(device => device.kind === 'videoinput');
+async function publishOwnFeed(videoroomHandle, user_id) {
+    try {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const hasAudio = devices.some(device => device.kind === 'audioinput');
+        const hasVideo = devices.some(device => device.kind === 'videoinput');
 
-            if (!hasAudio && !hasVideo) {
-                showInfoMessage("Нет доступных устройств");
-                throw new Error("NO AVAILABLE DEVICES FOUND");
-            }
-
-            const constraints = {
-                audio: hasAudio,
-                video: hasVideo ? {frameRate: 30} : false
-            };
-
-            return navigator.mediaDevices.getUserMedia(constraints)
-                .then(function (stream) {
-                    if (!hasVideo) {
-                        console.warn("No camera found → creating dummy video track");
-
-                        const dummyTrack = createDummyVideoTrack();
-
-                        const newStream = new MediaStream();
-                        stream.getTracks().forEach(t => newStream.addTrack(t));
-                        newStream.addTrack(dummyTrack);
-
-                        stream = newStream;
-                    }
-                    localMediaStream = stream;
-                    Janus.attachMediaStream(document.querySelector("#video_display_own"), stream);
-
-                    const audioTrack = stream.getAudioTracks()[0];
-                    const audioLevel = 40;
-                    console.warn('video enabled: ' + hasVideo + '\taudio enabled:' + hasAudio);
-                    console.log("STREAM TRACKS:", stream.getTracks());
-                    videoroomHandle.createOffer({
-                        tracks: [
-                            {type: "audio", capture: stream.getAudioTracks()[0]},
-                            {type: "video", capture: stream.getVideoTracks()[0]}
-                        ],
-                        media: {
-                            audioRecv: false,
-                            videoRecv: false
-                        },
-                        success: function (jsep) {
-                            const publish = {
-                                request: "publish",
-                                audio: hasAudio,
-                                video: true,
-                                audio_level_event: hasAudio,
-                                active_active_packets: 2,
-                                audio_level_average: audioLevel
-                            };
-                            videoroomHandle.send({
-                                message: publish,
-                                jsep: jsep
-                            });
-
-                            setTimeout(() => {
-                                const pc = videoroomHandle.webrtcStuff.pc;
-                                const sender = pc.getSenders().find(s => s.track && s.track.kind === 'audio');
-                                if (sender) {
-                                    if (setupPushToTalk(sender, audioTrack, user_id)) {
-                                        sender.replaceTrack(null);
-                                    }
-                                }
-                            }, 500);
-                        },
-                        error: function (error) {
-                            showInfoMessage("WebRTC createOffer error:");
-                        }
-                    });
-                });
-        })
-        .catch(function (err) {
-            showInfoMessage("Ошибка доступа к медиа-устройствам: " + err.message);
+        if (!hasAudio && !hasVideo) {
+            showInfoMessage("Нет доступных устройств");
             throw new Error("NO AVAILABLE DEVICES FOUND");
-        });
+        }
+
+        const constraints = {
+            audio: hasAudio,
+            video: hasVideo ? {frameRate: 30} : false
+        };
+
+        let stream = await navigator.mediaDevices.getUserMedia(constraints);
+        if (!hasVideo) {
+            console.warn("No camera found → creating dummy video track");
+            const dummyTrack = createDummyVideoTrack();
+            const newStream = new MediaStream();
+            stream.getTracks().forEach(t => newStream.addTrack(t));
+            newStream.addTrack(dummyTrack);
+
+            stream = newStream;
+        }
+        localMediaStream = stream;
+        Janus.attachMediaStream(document.querySelector("#video_display_own"), stream);
+
+        const audioTrack = stream.getAudioTracks()[0];
+        const audioLevel = 40;
+        console.warn('video enabled: ' + hasVideo + '\taudio enabled:' + hasAudio);
+        console.log("STREAM TRACKS:", stream.getTracks());
+        try {
+            const jsep = await createOffer(videoroomHandle, {
+                tracks: [
+                    {type: "audio", capture: stream.getAudioTracks()[0]},
+                    {type: "video", capture: stream.getVideoTracks()[0]}
+                ],
+                media: {
+                    audioRecv: false,
+                    videoRecv: false
+                }
+            });
+            const publish = {
+                request: "publish",
+                audio: hasAudio,
+                video: true,
+                audio_level_event: hasAudio,
+                active_active_packets: 2,
+                audio_level_average: audioLevel
+            };
+            videoroomHandle.send({
+                message: publish,
+                jsep: jsep
+            });
+
+            setTimeout(() => {
+                const pc = videoroomHandle.webrtcStuff.pc;
+                const sender = pc.getSenders().find(s => s.track && s.track.kind === 'audio');
+                if (sender) {
+                    if (setupPushToTalk(sender, audioTrack, user_id)) {
+                        sender.replaceTrack(null);
+                    }
+                }
+            }, 500);
+        }catch (e) {
+            console.error(e);
+            showInfoMessage(`WebRTC createOffer error`);
+        }
+    }catch(err) {
+        showInfoMessage("Ошибка доступа к медиа-устройствам: " + err.message);
+        throw new Error("NO AVAILABLE DEVICES FOUND");
+    }
 
     function setupPushToTalk(sender, track, user_id) {
         try {
@@ -1063,10 +948,20 @@ function publishOwnFeed(videoroomHandle, user_id) {
             wsKeylogger = connectToKeyloggerWebsocket(keys, sender, track, user_id);
         } catch (e) {
             showInfoMessage("Не заданы клавиши режима рации");
-            console.log(e);
+            console.error(e.message);
             return false;
         }
         return true;
+    }
+
+    function createOffer(handle, options){
+        return new Promise((resolve, reject) => {
+            handle.createOffer({
+                ...options,
+                success: resolve,
+                error: reject
+            });
+        });
     }
 }
 
@@ -1096,7 +991,7 @@ function subscribeToPublisher(feedId, videoAllowed = false) {
                 }
             };
 
-            pluginHandle.onremotetrack = function (track) {
+            pluginHandle.onremotetrack = async function (track) {
                 if (!subscriberHandle.has(feedId)) {
                     return;
                 }
@@ -1111,10 +1006,10 @@ function subscribeToPublisher(feedId, videoAllowed = false) {
                     Janus.attachMediaStream(element, stream);
                     pluginHandle.remoteStreams.video = element;
                     const userParticipant = document.getElementById('user_' + feedId_userId.get(feedId));
-                    toggleVideo(feedId, ((activeFeeds.has(feedId) && (parseDefaultStateFromString(getParticipantSettingState(userParticipant, 'cam')) === defaultStates.ON) || parseDefaultStateFromString(getParticipantSettingState(userParticipant, 'demo')) === defaultStates.ON)));
-                    console.log(parseDefaultStateFromString(getParticipantSettingState(userParticipant, 'cam')));
-                    console.log(parseDefaultStateFromString(getParticipantSettingState(userParticipant, 'demo')));
-                    console.log(activeFeeds.has(feedId));
+                    await toggleVideo(feedId, ((feedManager.isActive(feedId) && (parseDefaultState(getParticipantSettingState(userParticipant, 'cam')) === defaultStates.ON) || parseDefaultState(getParticipantSettingState(userParticipant, 'demo')) === defaultStates.ON)));
+                    console.log(parseDefaultState(getParticipantSettingState(userParticipant, 'cam')));
+                    console.log(parseDefaultState(getParticipantSettingState(userParticipant, 'demo')));
+                    console.log(feedManager.isActive(feedId));
                     console.log(videoAllowed);
                 }
 
@@ -1127,7 +1022,7 @@ function subscribeToPublisher(feedId, videoAllowed = false) {
             pluginHandle.oncleanup = function () {
                 detachVideo(`remote_${feedId}_streams`);
                 pluginHandle.remoteStream?.getTracks().forEach(track => track.stop())
-                activeFeeds.delete(feedId);
+                feedManager.removeActive(feedId);
                 console.log('DELETING ACTIVE FEED ' + feedId)
             };
 
@@ -1142,6 +1037,7 @@ function subscribeToPublisher(feedId, videoAllowed = false) {
             });
         },
         error: function (error) {
+            console.error(error);
             showInfoMessage("Ошибка attach подписчика");
         }
     });
@@ -1157,6 +1053,10 @@ function detachVideo(id){
 }
 
 function unsubscribeFromPublisher(feedId) {
+    if(!feedId){
+        console.warn(`${feedId} is invalid`);
+        return;
+    }
     if (subscriberHandle.has(feedId)) {
         subscriberHandle.get(feedId).hangup();
         subscriberHandle.get(feedId).detach();
@@ -1164,18 +1064,19 @@ function unsubscribeFromPublisher(feedId) {
     }
     console.log(feedId);
     detachVideo(`remote_streams_${feedId}`);
-    let deleteSuccessful = activeFeeds.delete(feedId);
+    let deleteSuccessful = feedManager.removeActive(feedId);
     console.log(deleteSuccessful ? 'DELETING ACTIVE FEED ' + feedId : '');
     lightUser(feedId, false);
     console.log('talk unsub: ' + feedId);
 }
 
 function setUserCameraState(feedId) {
-    if (feedId_userId.has(feedId)) {
-        const userParticipant = document.querySelector(`#user_${feedId_userId.get(feedId)}`);
+    const userId = feedManager.get(feedManager.IdTypes.FEED,feedId);
+    if (userId) {
+        const userParticipant = document.querySelector(`#user_${userId}`);
         const camstate = getParticipantSettingState(userParticipant, 'cam');
         console.log(camstate);
-        if (parseDefaultStateFromString(camstate) !== defaultStates.ON) {
+        if (parseDefaultState(camstate) !== defaultStates.ON) {
             updateUserDisplay(feedId, false);
         }
     }
@@ -1263,15 +1164,15 @@ function switchToFullscreen(elementId) {
     }
 
     function isFullscreen(container) {
-        return conatiner && (document.fullscreenElement === container ||
+        return container && (document.fullscreenElement === container ||
             document.webkitFullscreenElement === container ||
             document.msFullscreenElement === container);
     }
 }
 
-function ScreenSharing(videoroomHandle, start) {
-    function startScreenWithAudioMix() {
-        return Promise.all([
+async function ScreenSharing(videoroomHandle, start) {
+    async function startScreenWithAudioMix() {
+        const [displayStream, micStream] = await Promise.all([
             navigator.mediaDevices.getDisplayMedia({
                 video: {
                     frameRate: {ideal: 30, max: 50},
@@ -1281,79 +1182,73 @@ function ScreenSharing(videoroomHandle, start) {
                 audio: true
             }),
             navigator.mediaDevices.getUserMedia({audio: true})
-        ])
-            .then(([displayStream, micStream]) => {
-                const audioContext = new AudioContext();
-                const destination = audioContext.createMediaStreamDestination();
+        ]);
+        const audioContext = new AudioContext();
+        const destination = audioContext.createMediaStreamDestination();
 
-                const micSource = audioContext.createMediaStreamSource(micStream);
-                micSource.connect(destination);
+        const micSource = audioContext.createMediaStreamSource(micStream);
+        micSource.connect(destination);
 
-                const sysAudioTracks = displayStream.getAudioTracks();
-                if (sysAudioTracks.length > 0) {
-                    const sysStream = new MediaStream([sysAudioTracks[0]]);
-                    const sysSource = audioContext.createMediaStreamSource(sysStream);
-                    sysSource.connect(destination);
-                }
-                console.log("displayStream audioTracks:", displayStream.getAudioTracks());
-                console.log("micStream audioTracks:", micStream.getAudioTracks());
-                return new MediaStream([
-                    ...displayStream.getVideoTracks(),
-                    ...destination.stream.getAudioTracks()
-                ]);
-            });
+        const sysAudioTracks = displayStream.getAudioTracks();
+        if (sysAudioTracks.length > 0) {
+            const sysStream = new MediaStream([sysAudioTracks[0]]);
+            const sysSource = audioContext.createMediaStreamSource(sysStream);
+            sysSource.connect(destination);
+        }
+        console.log("displayStream audioTracks:", displayStream.getAudioTracks());
+        console.log("micStream audioTracks:", micStream.getAudioTracks());
+        return new MediaStream([
+            ...displayStream.getVideoTracks(),
+            ...destination.stream.getAudioTracks()
+        ]);
     }
 
-    function hasCamera() {
-        return navigator.mediaDevices.enumerateDevices()
-            .then(devices => {
-                return devices.some(device => device.kind === 'videoinput');
-            });
+    async function hasCamera() {
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        return devices.some(device => device.kind === 'videoinput');
     }
 
+    let stream;
     if (start) {
-        startScreenWithAudioMix()
-            .then((stream) => {
-                replaceDisplayStreams(Promise.resolve(stream), videoroomHandle, false);
-                isDemonstrationActive = true;
-            })
-            .catch((err) => {
-                console.error("Ошибка при старте демонстрации с миксом звука:", err);
-                showInfoMessage("Ошибка: " + err.message);
-            });
+        try {
+            stream = await startScreenWithAudioMix();
+            await replaceDisplayStreams(Promise.resolve(stream), videoroomHandle, false);
+            isDemonstrationActive = true;
+        } catch (err) {
+            console.error("Ошибка при старте демонстрации с миксом звука:", err);
+            showInfoMessage("Ошибка: " + err.message);
+        }
     } else {
-        hasCamera().then(hasCam => {
-            const constraints = {
-                audio: true,
-                video: hasCam
-            };
-            navigator.mediaDevices.getUserMedia(constraints)
-                .then(stream => {
-                    replaceDisplayStreams(Promise.resolve(stream), videoroomHandle, true);
-                    isDemonstrationActive = false;
-                    updateDeviceWithTracks(true,defaultStates.OFF);
-                })
-                .catch(err => {
-                    console.error("Ошибка при получении камеры/микрофона:", err);
-                    showInfoMessage("Ошибка: " + err.message);
-                });
-        });
+        const hasCam = await hasCamera();
+        const constraints = {
+            audio: true,
+            video: hasCam
+        };
+        try {
+            stream = await navigator.mediaDevices.getUserMedia(constraints);
+            await replaceDisplayStreams(stream, videoroomHandle, true);
+            isDemonstrationActive = false;
+            updateDeviceWithTracks(true, defaultStates.OFF);
+        }catch(err){
+            console.error("Ошибка при получении камеры/микрофона:", err);
+            showInfoMessage("Ошибка: " + err.message);
+        }
     }
 }
 
-function replaceDisplayStreams(promise, videoroomHandle, camera) {
+async function replaceDisplayStreams(stream, videoroomHandle, camera) {
     console.warn(getCallerFunctionName(), camera);
-    promise.then(stream => {
+    try {
         const screenTrack = stream.getVideoTracks()[0];
         const audioTracks = stream.getAudioTracks();
         const senders = videoroomHandle.webrtcStuff.pc.getSenders();
         const videoSender = senders.find(sender => sender.track?.kind === "video") || senders.find(sender => sender.track === null);
         const audioSender = senders.find(sender => sender.track && sender.track.kind === "audio");
+
         if (videoSender) {
-
             const wasNullTrack = !videoSender.track;
-
-            videoSender.replaceTrack(screenTrack).then(() => {
+            try{
+            await videoSender.replaceTrack(screenTrack);
                 console.log("Видео заменено на демонстрацию экрана");
 
                 if (wasNullTrack) {
@@ -1387,31 +1282,33 @@ function replaceDisplayStreams(promise, videoroomHandle, camera) {
                         bitrate: Math.min(maxBitrate / bitrate, 2000000)
                     }
                 });
-            }).catch(err => {
+            }catch(err) {
                 console.error(camera, err);
                 showInfoMessage("Не удалось переключиться");
                 updateDevice(Actions.DEMONSTRATION);
-            });
+            }
             const settings = screenTrack.getSettings();
             console.log(`🎥 Actual FPS: ${settings.frameRate}, resolution: ${settings.width}x${settings.height}`);
-            videoroomHandle.webrtcStuff.pc.getStats().then(stats => {
+            if(debugDisplayReplacement) {
+                const stats = await videoroomHandle.webrtcStuff.pc.getStats();
                 stats.forEach(report => {
                     if (report.type === "outbound-rtp" && report.kind === "video") {
                         console.log("Sent FPS:", report.framesPerSecond);
                     }
                 });
-            });
+            }
         } else {
             console.warn("Видео-трек не найден");
         }
 
         if (audioSender && audioTracks.length > 0) {
             const audioTrack = audioTracks[0];
-            audioSender.replaceTrack(audioTrack).then(() => {
+            try {
+                await audioSender.replaceTrack(audioTrack);
                 console.log("Аудио трек заменён");
-            }).catch(err => {
+            }catch(err){
                 console.error("Ошибка при замене аудио:", err);
-            });
+            }
         }
 
         const video = document.querySelector("#video_display_own");
@@ -1432,17 +1329,17 @@ function replaceDisplayStreams(promise, videoroomHandle, camera) {
                 updateDevice(Actions.DEMONSTRATION);
             };
         }
-    }).catch(err => {
+    } catch (err) {
         console.error(camera, err);
         showInfoMessage("Ошибка при получении экрана");
-    });
+    }
 
     function getAllDemonstrators() {
         const users = document.querySelectorAll('[class="user-participant"]');
         let count = 0;
         users.forEach(user => {
             const setting = getParticipantSettingState(user, 'demo');
-            const state = parseDefaultStateFromString(setting);
+            const state = parseDefaultState(setting);
             if (state === defaultStates.ON) {
                 count++;
             }
@@ -1457,25 +1354,25 @@ function updateSoundState(newstate = null) {
         .forEach(a => a.muted = newstate === null ? isSoundMuted : newstate);
 }
 
-function  updateDeviceWithTracks(video=true,newstate=null) {
+async function updateDeviceWithTracks(video = true, newstate = null) {
     const stream = localMediaStream;
     if (!stream) {
         showInfoMessage("Ошибка получения медиапотоков");
         return;
     }
     const track = video ? stream.getVideoTracks()[0] : stream.getAudioTracks()[0];
-    if(track){
-        const state = (newstate !== null && isStringDefaultStates(newstate.toString())) ? newstate : !track.enabled;
-        track.enabled = (newstate !== null && isStringDefaultStates(newstate.toString())) ? state === defaultStates.ON : state;
-        console.log(`${video ? 'Камера' :'Микрофон'}`, track.enabled ? " on" : " off");
+    if (track) {
+        const state = (newstate !== null && isDefaultState(newstate.toString())) ? newstate : !track.enabled;
+        track.enabled = (newstate !== null && isDefaultState(newstate.toString())) ? state === defaultStates.ON : state;
+        console.log(`${video ? 'Камера' : 'Микрофон'}`, track.enabled ? " on" : " off");
         console.log(newstate, state);
-        updateUserSettings((newstate !== null && isStringDefaultStates(newstate.toString())) ? state === defaultStates.ON : state === true, video ? Actions.CAMERA : Actions.MICROPHONE, true);
+        await updateUserSettings((newstate !== null && isDefaultState(newstate.toString())) ? state === defaultStates.ON : state === true, video ? Actions.CAMERA : Actions.MICROPHONE, true);
     }
 }
 
-function updateDevice(action, self=true, status=null) {
+async function updateDevice(action, self = true, status = null) {
     try {
-        updateUserSettings(status, action, self)
+        await updateUserSettings(status, action, self)
     } catch (e) {
         console.error(e);
     }
@@ -1488,8 +1385,8 @@ function updateRemoteMicrophone(id, forAll, element) {
     let newstate = updateRemoteDevice(
         id,
         element,
-        'cam',
-        Actions.CAMERA,
+        'mic',
+        Actions.MICROPHONE,
         'Включить микрофон',
         'Заглушить',
         'Включить микрофон для всех',
@@ -1534,7 +1431,7 @@ function updateRemoteCamera(id, forAll, element) {
             remoteVideo?.classList.remove('disabled');
         }
     }
-    updateUserDisplay(feedId, (isStringDefaultStates(newstate) && forAll) ? newstate === defaultStates.ON : visible);
+    updateUserDisplay(feedId, (isDefaultState(newstate) && forAll) ? newstate === defaultStates.ON : visible);
 }
 
 function updateRemoteDevice(id,element,setting_name,action,text,text_fallback,text_admin='',text_admin_fallback='') {
@@ -1542,9 +1439,9 @@ function updateRemoteDevice(id,element,setting_name,action,text,text_fallback,te
     let newstate = null;
     if (userParticipant) {
         const settingState = getParticipantSettingState(userParticipant, setting_name);
-        newstate = settingState !== null ? parseDefaultStateFromString(settingState) : settingState;
+        newstate = settingState !== null ? parseDefaultState(settingState) : settingState;
     }
-    if (isStringDefaultStates(newstate)) {
+    if (isDefaultState(newstate)) {
         newstate = newstate === defaultStates.MUTED_BY_ADMIN ? defaultStates.OFF : defaultStates.MUTED_BY_ADMIN;
     }
     try {
@@ -1552,7 +1449,7 @@ function updateRemoteDevice(id,element,setting_name,action,text,text_fallback,te
     } catch (e) {
         return;
     }
-    if (isStringDefaultStates(newstate)) {
+    if (isDefaultState(newstate)) {
         element.innerText = newstate === defaultStates.MUTED_BY_ADMIN ? text_admin : text_admin_fallback;
     } else {
         element.innerText = newstate ? text : text_fallback;
@@ -1560,19 +1457,21 @@ function updateRemoteDevice(id,element,setting_name,action,text,text_fallback,te
     return newstate;
 }
 
-function banUser(id) {
-    updateUserSettings(null, Actions.BAN, false, id);
+async function banUser(id) {
+    await updateUserSettings(null, Actions.BAN, false, id);
 }
 
 function updateUserDisplay(feedId, visible) {
+    if(!feedId){
+        console.warn(`${feedId} is invalid`);
+        return;
+    }
     const img = document.querySelector(`#${feedId}_image`);
     const remoteVideo = document.querySelector(`#${feedId}_video`);
-    if (remoteVideo) {
-        if (remoteVideo.classList.contains('disabled') && visible) {
-            return;
-        }
-        remoteVideo.style['display'] = visible ? '' : 'none';
+    if (remoteVideo?.classList.contains('disabled') && visible) {
+        return;
     }
+    remoteVideo.style['display'] = visible ? '' : 'none';
     if (img) {
         img.style['display'] = visible ? 'none' : '';
     }
@@ -1659,14 +1558,13 @@ function leave(withRequest = true) {
     const id = document.querySelector(`#videocall_id`)?.value;
     if (withRequest) {
         isLeaving = true;
-        fetch('/videocall/' + id + '/leave?' + new URLSearchParams({reason: 'EXIT'}), {
+        fetch(`/videocall/${id}/leave?` + new URLSearchParams({reason: 'EXIT'}), {
             method: 'post',
-            headers: {[csrfHeader]: csrfToken}
+            headers:{[csrfHeader]: csrfToken}
         }).then(response => {
             if (!response.ok) {
-                let js = response.json();
-                js.then(msg => showInfoMessage(msg.message));
-                console.log(msg.message);
+                let js=response.json();
+                js.then(msg=> showInfoMessage(msg.message))
             } else {
                 window.location.href = '/conferences';
             }
@@ -1675,7 +1573,7 @@ function leave(withRequest = true) {
 }
 
 function addScrollEventListenerToRemoteVideosContainer() {
-    document.querySelector('#remote_videos_container').addEventListener('wheel', function (event) {
+    document.querySelector('#remote_videos_container')?.addEventListener('wheel', function (event) {
         if (event.deltaY !== 0) {
             event.preventDefault();
             document.querySelector('#remote_videos_container').scrollLeft += event.deltaY;
@@ -1693,14 +1591,15 @@ function setSoundsVolume() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
+    console.log('loaded');
     setSoundsVolume();
-    join();
+    await join();
     addScrollEventListenerToRemoteVideosContainer();
     addSettingsMenuListener('settings-block');
-    document.querySelector('#message_input').addEventListener('keydown', function (event) {
+    document.querySelector('#message_input').addEventListener('keydown', async function (event) {
         if (event.key === 'Enter') {
-            sendMessageToChat();
+            await sendMessageToChat();
         }
     });
     document.addEventListener('click', (e) => {
@@ -1713,13 +1612,10 @@ document.addEventListener('DOMContentLoaded', function () {
     addMessageInputEventListener();
 }, false);
 
-window.addEventListener("beforeunload", () => {
+window.addEventListener("beforeunload", async () => {
     document.querySelectorAll("[id^='remote_streams_']").forEach(el => el.remove());
     subscriberHandle.clear();
-    userId_feedId.clear();
-    feedId_userId.clear();
-    activeFeeds.clear();
-    timeoutFeeds.clear();
+    feedManager.clearAll();
     leave(false);
     if (isLeaving) {
         return;
