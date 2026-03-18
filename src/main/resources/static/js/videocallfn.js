@@ -1,13 +1,12 @@
 import {sounds, defaultStates, Actions} from "./videocall/constants.js";
 import  {FeedManager} from "./videocall/feedmanager.js";
-import {UiManager} from "./videocall/uimanager.js";
+import {UiManager} from "./videocall/UiManager.js";
 import {PushToTalkManager} from "./videocall/pushtotalk.js";
 import {VideoCallUtils} from "./videocall/utils.js";
 import {CONFIG} from "./videocall/config.js";
 
 let janus = null;
 const feedManager = new FeedManager();
-const uiManager = new UiManager();
 const pushToTalkManager = new PushToTalkManager();
 
 let subscriberHandle = new Map();
@@ -46,8 +45,9 @@ function connectToVideocallWs(room_id, user_id, videoroomHandle) {
             } else if (jsdata.event === "connected") {
                 const participants = jsdata.users;
                 participants.forEach(participant => {
-                    createUserParticipantBlock(participant);
-                    uiManager.updateUserDisplay(feedManager.get(feedManager.MapKey.USER, participant.id), participant.camera === defaultStates.ON);
+                    const feedId=feedManager.get(feedManager.MapKey.USER, participant.id);
+                    UiManager.createUserParticipantBlock(participant,feedId);
+                    UiManager.updateUserDisplay(feedManager.get(feedManager.MapKey.USER, participant.id), participant.camera === defaultStates.ON);
                 });
                 const messages = jsdata.messageArray;
                 messages.forEach(msg => {
@@ -106,13 +106,13 @@ function connectToVideocallWs(room_id, user_id, videoroomHandle) {
                         }
                     }
                     if (jsdata.data.message.video !== undefined) {
-                        setControlButtonIcon(jsdata.data.state, 'camstate');
+                        UiManager.setControlButtonIcon(jsdata.data.state, 'camstate');
                     } else if (jsdata.data.message.audio !== undefined) {
-                        setControlButtonIcon(jsdata.data.state, 'microstate');
+                        UiManager.setControlButtonIcon(jsdata.data.state, 'microstate');
                     } else if (jsdata.data.message.sound !== undefined) {
-                        setControlButtonIcon(jsdata.data.state, 'soundstate');
+                        UiManager.setControlButtonIcon(jsdata.data.state, 'soundstate');
                     } else if (jsdata.data.message.demonstration !== undefined) {
-                        setControlButtonIcon(jsdata.data.state, 'demostate');
+                        UiManager.setControlButtonIcon(jsdata.data.state, 'demostate');
                     }
                 } else {
                     const userId = jsdata.userId;
@@ -121,14 +121,14 @@ function connectToVideocallWs(room_id, user_id, videoroomHandle) {
                     console.log(participant);
                     if (participant) {
                         if (jsdata.data.message.video !== undefined) {
-                            updateParticipantPropertiesIcons(participant, jsdata.data.state, Actions.CAMERA);
+                            UiManager.updateIcon(Actions.CAMERA,jsdata.data.state,participant);
                            await manageActiveFeeds(userId,jsdata);
                         } else if (jsdata.data.message.audio !== undefined) {
-                            updateParticipantPropertiesIcons(participant, jsdata.data.state, Actions.MICROPHONE);
+                            UiManager.updateIcon(Actions.MICROPHONE,jsdata.data.state,participant);
                         } else if (jsdata.data.message.sound !== undefined) {
-                            updateParticipantPropertiesIcons(participant, jsdata.data.state, Actions.SOUND);
+                            UiManager.updateIcon(Actions.SOUND,jsdata.data.state,participant);
                         } else if (jsdata.data.message.demonstration !== undefined) {
-                            updateParticipantPropertiesIcons(participant, jsdata.data.state, Actions.DEMONSTRATION);
+                            UiManager.updateIcon(Actions.DEMONSTRATION,jsdata.data.state,participant);
                             if (jsdata.data.state === defaultStates.ON) {
                                 sounds.DEMOSTART.play().catch(err => console.warn('Autoplay block?', err));
                             } else if (jsdata.data.state === defaultStates.OFF) {
@@ -183,63 +183,6 @@ async function manageActiveFeeds(userId, jsdata) {
             await toggleVideo(feedId, jsdata.data.state === defaultStates.ON);
         }
     }
-}
-
-function createUserParticipantBlock(participant) {
-    const container = document.querySelector(".user-list-zone");
-    if (!document.querySelector(`#user_${participant.id}`)) {
-        const div1 = document.createElement("div");
-        div1.className = "user-participant";
-        div1.id = `user_${participant.id}`;
-        div1.setAttribute("name", participant.login);
-        container.appendChild(div1);
-        const div2 = document.createElement('div');
-        div2.className = 'user-participant-desc';
-        const div3 = document.createElement('div');
-        div3.className = 'user-participant-avatar-and-name';
-        const img = document.createElement("img");
-        img.src = `/useravatar/${participant.id}`;
-        img.id = `user_avatar_${participant.id}`;
-        img.className = "user-participant-avatar";
-        const span = document.createElement("span");
-        span.textContent = getUserCredentials(participant);
-        div1.appendChild(div2);
-        div2.appendChild(div3);
-        div3.appendChild(img);
-        div3.appendChild(span);
-        const element = uiManager.createSettingsBlock(div1, participant);
-        const feedId=feedManager.get(feedManager.MapKey.USER, participant.id);
-        console.log('map has key:' + feedId);
-        if (feedId) {
-            const img = document.querySelector(`#${feedId}_image`);
-            if (img) {
-                img.src = `/useravatar/${participant.id}`;
-            }
-        }
-        setParticipantPropertiesIcons(element, participant);
-    }
-}
-
-function setParticipantPropertiesIcons(container, participant) {
-    const div = document.createElement('div');
-    div.className = 'user-participant-icons';
-    container.appendChild(div);
-    if (participant.microphone !== undefined) {
-        uiManager.createIcon(Actions.MICROPHONE, participant.microphone, div);
-    }
-    if (participant.camera !== undefined) {
-        uiManager.createIcon(Actions.CAMERA, participant.camera, div);
-    }
-    if (participant.sound !== undefined) {
-        uiManager.createIcon(Actions.SOUND, participant.sound, div);
-    }
-    if (participant.demo !== undefined) {
-        uiManager.createIcon(Actions.DEMONSTRATION, participant.demo, div);
-    }
-}
-
-function updateParticipantPropertiesIcons(container, state, action) {
-    uiManager.updateIcon(action,state,container);
 }
 
 function addMessageToChat(msg, userId) {
@@ -314,22 +257,6 @@ async function updateUserSettings(status, action, self, userId = null) {
     }
 }
 
-function setControlButtonIcon(state, id) {
-    const element = document.querySelector(`#${id}`);
-    state = state.toString().toLowerCase();
-    element?.classList.remove(state === 'ON' ? 'videocall-setting-button-off' : "videocall-setting-button-on");
-    element?.classList.add(state === 'ON' ? 'videocall-setting-button-on' : 'videocall-setting-button-off');
-    if (state.toString().includes('MUTED')) {
-        state = 'MUTED';
-    }
-    element?.classList.forEach(name => {
-        if (name.includes(id)) {
-            element?.classList.remove(name);
-        }
-    });
-    element?.classList.add(`${id}-${state}`);
-}
-
 async function sendMessageToChat() {
     const text = document.querySelector('#message_input').value;
     if (text === '' || !text) {
@@ -367,7 +294,7 @@ async function sendMessageToChat() {
 }
 
 async function join() {
-    const confirmed = await uiManager.createDialogWindow();
+    const confirmed = await UiManager.createDialogWindow();
     if (!confirmed) {
         window.location.href = '/conferences';
         return;
@@ -400,10 +327,10 @@ async function join() {
             console.log(data);
             opaqueId = `videoroom-${roomId}`;
             if (!devices_start_state_updated) {
-                setControlButtonIcon(data.soundstate, 'soundstate');
-                setControlButtonIcon(data.demostate, 'demostate');
-                setControlButtonIcon(microstate, 'microstate');
-                setControlButtonIcon(camerastate, 'camstate');
+                UiManager.setControlButtonIcon(data.soundstate, 'soundstate');
+                UiManager.setControlButtonIcon(data.demostate, 'demostate');
+                UiManager.setControlButtonIcon(microstate, 'microstate');
+                UiManager.setControlButtonIcon(camerastate, 'camstate');
             }
             Janus.init({
                 //  debug: "all",
@@ -493,7 +420,7 @@ function startJanus(roomId, username, opaqueId, microstate = defaultStates.OFF, 
                             await toggleVideo(talkingFeedId, true);
                         }
                         feedManager.removeTimeout(talkingFeedId);
-                        uiManager.lightUser(userId, true);
+                        UiManager.lightUser(userId, true);
                     }
 
                     if (msg.videoroom === "stopped-talking") {
@@ -517,7 +444,7 @@ function startJanus(roomId, username, opaqueId, microstate = defaultStates.OFF, 
 
                                 feedManager.addTimeout(feedId,timeout);
                             }
-                            uiManager.lightUser(userId, false);
+                            UiManager.lightUser(userId, false);
                         }
                     }
 
@@ -598,7 +525,7 @@ async function toggleVideo(feedId, visible) {
     console.log(videoElement);
     if (handle?.remoteStreams?.video) {
         console.log('--------------------------------------------------------------' + visible);
-        uiManager.updateUserDisplay(feedId, visible);
+        UiManager.updateUserDisplay(feedId, visible);
         const tracks = handle?.remoteStreams?.video.srcObject?.getVideoTracks();
         console.log(tracks);
         tracks?.forEach(track => track.enabled = visible);
@@ -612,7 +539,7 @@ async function toggleVideo(feedId, visible) {
             }
         }
     } else {
-        uiManager.updateUserDisplay(feedId, false);
+        UiManager.updateUserDisplay(feedId, false);
     }
 }
 
@@ -753,7 +680,7 @@ function subscribeToPublisher(feedId, videoAllowed = false) {
 
                 const stream = new MediaStream([track]);
                 const userId = feedManager.get(feedManager.MapKey.FEED,feedId);
-                const element = uiManager.createUserBlock(track.kind === "video", track.kind === "audio", feedId,userId);
+                const element = UiManager.createUserBlock(track.kind === "video", track.kind === "audio", feedId,userId);
 
                 if (track.kind === "video") {
                     Janus.attachMediaStream(element, stream);
@@ -820,7 +747,7 @@ function unsubscribeFromPublisher(feedId) {
     feedManager.removeActive(feedId);
     console.log('DELETING ACTIVE FEED ' + feedId);
     const userId = feedManager.get(feedManager.MapKey.FEED,feedId);
-    uiManager.lightUser(userId, false);
+    UiManager.lightUser(userId, false);
     console.log('talk unsub: ' + feedId);
 }
 
@@ -831,7 +758,7 @@ function setUserCameraState(feedId) {
         const camstate = VideoCallUtils.getParticipantSettingState(userParticipant, 'cam');
         console.log(camstate);
         if (VideoCallUtils.parseDefaultState(camstate) !== defaultStates.ON) {
-            uiManager.updateUserDisplay(feedId, false);
+            UiManager.updateUserDisplay(feedId, false);
         }
     }
 }
@@ -1117,7 +1044,7 @@ function updateRemoteCamera(id, forAll, element) {
             remoteVideo?.classList.remove('disabled');
         }
     }
-    uiManager.updateUserDisplay(feedId, (VideoCallUtils.isDefaultState(newstate) && forAll) ? newstate === defaultStates.ON : visible);
+    UiManager.updateUserDisplay(feedId, (VideoCallUtils.isDefaultState(newstate) && forAll) ? newstate === defaultStates.ON : visible);
 }
 
 function updateRemoteDevice(id,element,setting_name,action,text,text_fallback,text_admin='',text_admin_fallback='') {
@@ -1156,7 +1083,7 @@ function showParticipantList(matches, position) {
         item.className = 'participants-item';
         item.textContent = user.name;
         item.addEventListener('click', () => {
-            uiManager.insertParticipantIntoList(user.name);
+            UiManager.insertParticipantIntoList(user.name);
             dropdown.style.display = 'none';
         });
         dropdown.appendChild(item);

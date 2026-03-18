@@ -4,7 +4,7 @@ export class UiManager {
     constructor() {
     }
 
-    updateIcon(className, state, container) {
+    static updateIcon(className, state, container) {
         let icon = container.querySelector(`[class*='${className}']`);
         state = state.toString().toLowerCase();
         if (state.includes('MUTED')) {
@@ -22,7 +22,7 @@ export class UiManager {
         icon.src = `${iconsVideocallUrl}/${className}/${state}.png`;
     }
 
-    createIcon(className, state, container) {
+    static createIcon(className, state, container) {
         if (state.toString().includes('MUTED')) {
             state = 'MUTED';
         }
@@ -34,7 +34,7 @@ export class UiManager {
         return icon;
     }
 
-    createSettingsBlock(container, participant) {
+    static createSettingsBlock(container, participant) {
         console.log(participant);
         const actions = new Map([
             ['Заглушить',
@@ -78,7 +78,7 @@ export class UiManager {
         return div1;
     }
 
-    lightUser(userId, state) {
+    static lightUser(userId, state) {
         if (userId) {
             const userBlock = document.querySelector(`#user_${userId}`);
             if (userBlock) {
@@ -87,7 +87,7 @@ export class UiManager {
         }
     }
 
-    createDialogWindow() {
+    static createDialogWindow() {
         return new Promise((resolve) => {
             const documentTitle = document.title || "unknown";
             const existingDialog = document.querySelector("#confirm_join_dialog");
@@ -114,7 +114,7 @@ export class UiManager {
         });
     }
 
-    insertParticipantIntoList(name) {
+    static insertParticipantIntoList(name) {
         const input = document.querySelector('#message_input');
         const text = input.value;
         const cursorPos = input.selectionStart;
@@ -129,7 +129,7 @@ export class UiManager {
         }
     }
 
-    updateUserDisplay(feedId, visible) {
+    static updateUserDisplay(feedId, visible) {
         if(!feedId){
             console.warn(`${feedId} is invalid`);
             return;
@@ -145,7 +145,7 @@ export class UiManager {
         }
     }
 
-    createUserBlock(video = false, audio = false, feedId,userId) {
+    static createUserBlock(video = false, audio = false, feedId,userId) {
         console.log('CREATING REMOTE STREAMS BLOCK FOR ' + feedId);
         let container = document.querySelector(`#remote_streams_${feedId}`);
         if (!container) {
@@ -199,5 +199,73 @@ export class UiManager {
             }
         }
         return element;
+    }
+
+    static createUserParticipantBlock(participant,feedId) {
+        const container = document.querySelector(".user-list-zone");
+        if (!document.querySelector(`#user_${participant.id}`)) {
+            const div1 = document.createElement("div");
+            div1.className = "user-participant";
+            div1.id = `user_${participant.id}`;
+            div1.setAttribute("name", participant.login);
+            container.appendChild(div1);
+            const div2 = document.createElement('div');
+            div2.className = 'user-participant-desc';
+            const div3 = document.createElement('div');
+            div3.className = 'user-participant-avatar-and-name';
+            const img = document.createElement("img");
+            img.src = `/useravatar/${participant.id}`;
+            img.id = `user_avatar_${participant.id}`;
+            img.className = "user-participant-avatar";
+            const span = document.createElement("span");
+            span.textContent = getUserCredentials(participant);
+            div1.appendChild(div2);
+            div2.appendChild(div3);
+            div3.appendChild(img);
+            div3.appendChild(span);
+            const element = this.createSettingsBlock(div1, participant);
+            console.log('map has key:' + feedId);
+            if (feedId) {
+                const img = document.querySelector(`#${feedId}_image`);
+                if (img) {
+                    img.src = `/useravatar/${participant.id}`;
+                }
+            }
+            this.setParticipantPropertiesIcons(element, participant);
+        }
+    }
+
+    static setParticipantPropertiesIcons(container, participant) {
+        const div = document.createElement('div');
+        div.className = 'user-participant-icons';
+        container.appendChild(div);
+        if (participant.microphone !== undefined) {
+            this.createIcon(Actions.MICROPHONE, participant.microphone, div);
+        }
+        if (participant.camera !== undefined) {
+            this.createIcon(Actions.CAMERA, participant.camera, div);
+        }
+        if (participant.sound !== undefined) {
+            this.createIcon(Actions.SOUND, participant.sound, div);
+        }
+        if (participant.demo !== undefined) {
+            this.createIcon(Actions.DEMONSTRATION, participant.demo, div);
+        }
+    }
+
+    static setControlButtonIcon(state, id) {
+        const element = document.querySelector(`#${id}`);
+        state = state.toString().toLowerCase();
+        element?.classList.remove(state === 'ON' ? 'videocall-setting-button-off' : "videocall-setting-button-on");
+        element?.classList.add(state === 'ON' ? 'videocall-setting-button-on' : 'videocall-setting-button-off');
+        if (state.toString().includes('MUTED')) {
+            state = 'MUTED';
+        }
+        element?.classList.forEach(name => {
+            if (name.includes(id)) {
+                element?.classList.remove(name);
+            }
+        });
+        element?.classList.add(`${id}-${state}`);
     }
 }
