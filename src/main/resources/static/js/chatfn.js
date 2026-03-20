@@ -15,8 +15,8 @@ const ChatWebSocketManager = (function () {
         }
 
         const ws_addr =
-            "wss://localhost:60600";
-            //"wss://5.189.10.253:60600";
+            //"wss://localhost:60600";
+            "wss://5.189.10.253:60600";
         ws = new WebSocket(ws_addr);
         currentUserId = userId;
         currentChatId = chatId;
