@@ -590,7 +590,7 @@ function removeFileFromList(id,fileName){
     }
 }
 
-function convertImage(img, maxWidth = 200){
+function convertImage(img, maxWidth = 120,options={}){
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
 
@@ -602,7 +602,7 @@ function convertImage(img, maxWidth = 200){
 
     const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-    return imageToUnicode(imageData);
+    return imageToUnicode(imageData,options);
 }
 
 function imageToUnicode(imageData, options = {}) {
