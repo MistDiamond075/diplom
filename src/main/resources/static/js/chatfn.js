@@ -14,7 +14,9 @@ const ChatWebSocketManager = (function () {
             return;
         }
 
-        const ws_addr = "wss://5.189.10.253:60600";
+        const ws_addr =
+            "wss://localhost:60600";
+            //"wss://5.189.10.253:60600";
         ws = new WebSocket(ws_addr);
         currentUserId = userId;
         currentChatId = chatId;
@@ -603,8 +605,46 @@ function convertImage(img, maxWidth = 200){
     return imageToUnicode(imageData);
 }
 
-function imageToUnicode(imageData, threshold = 128) {
+function imageToUnicode(imageData, options = {}) {
+    const {
+        contrast = 1.4,
+        invert = false
+    } = options;
+
     const { data, width, height } = imageData;
+
+    const gray = new Float32Array(width * height);
+
+    for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+        let g =
+            data[i] * 0.299 +
+            data[i + 1] * 0.587 +
+            data[i + 2] * 0.114;
+
+        g = (g - 128) * contrast + 128;
+
+        gray[j] = Math.max(0, Math.min(255, g));
+    }
+
+    for (let y = 0; y < height; y++) {
+        for (let x = 0; x < width; x++) {
+
+            const i = y * width + x;
+            const oldPixel = gray[i];
+
+            const newPixel = oldPixel < 128 ? 0 : 255;
+            const error = oldPixel - newPixel;
+
+            gray[i] = newPixel;
+
+            if (x + 1 < width) gray[i + 1] += error * 7 / 16;
+            if (y + 1 < height) {
+                if (x > 0) gray[i + width - 1] += error * 3 / 16;
+                gray[i + width] += error * 5 / 16;
+                if (x + 1 < width) gray[i + width + 1] += error / 16;
+            }
+        }
+    }
 
     let result = "";
 
@@ -613,32 +653,27 @@ function imageToUnicode(imageData, threshold = 128) {
 
             let code = 0;
 
-            const getBit = (dx, dy, bit) => {
+            const get = (dx, dy, bit) => {
                 const px = x + dx;
                 const py = y + dy;
 
                 if (px >= width || py >= height) return;
 
-                const i = (py * width + px) * 4;
+                const val = gray[py * width + px];
 
-                const gray =
-                    data[i] * 0.299 +
-                    data[i + 1] * 0.587 +
-                    data[i + 2] * 0.114;
+                const isOn = invert ? val > 128 : val < 128;
 
-                if (gray < threshold) {
-                    code |= bit;
-                }
+                if (isOn) code |= bit;
             };
 
-            getBit(0, 0, 1);   // dot 1
-            getBit(0, 1, 2);   // dot 2
-            getBit(0, 2, 4);   // dot 3
-            getBit(1, 0, 8);   // dot 4
-            getBit(1, 1, 16);  // dot 5
-            getBit(1, 2, 32);  // dot 6
-            getBit(0, 3, 64);  // dot 7
-            getBit(1, 3, 128); // dot 8
+            get(0, 0, 1);
+            get(0, 1, 2);
+            get(0, 2, 4);
+            get(1, 0, 8);
+            get(1, 1, 16);
+            get(1, 2, 32);
+            get(0, 3, 64);
+            get(1, 3, 128);
 
             result += String.fromCharCode(0x2800 + code);
         }
