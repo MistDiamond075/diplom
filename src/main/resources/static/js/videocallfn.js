@@ -2,16 +2,15 @@ import {sounds, defaultStates, Actions} from "./videocall/constants.js";
 import  {FeedManager} from "./videocall/feedmanager.js";
 import {UiManager} from "./videocall/UiManager.js";
 import {PushToTalkManager} from "./videocall/pushtotalk.js";
+import {JanusManager} from "./videocall/janusmanager.js";
 import {VideoCallUtils} from "./videocall/utils.js";
 import {CONFIG} from "./videocall/config.js";
 
 let janus = null;
 const feedManager = new FeedManager();
 const pushToTalkManager = new PushToTalkManager();
+const janusManager = new JanusManager(feedManager,pushToTalkManager);
 
-let subscriberHandle = new Map();
-let opaqueId;
-let roomId;
 let isLeaving = false;
 let isSoundMuted = false;
 let localMediaStream = null;
@@ -19,7 +18,6 @@ let devices_start_state_updated = false;
 let isDemonstrationActive = false;
 let ws;
 let debugDisplayReplacement=false;
-var debugHandle;
 
 function connectToVideocallWs(room_id, user_id, videoroomHandle) {
     const ws_addr = CONFIG.ws;
@@ -245,9 +243,7 @@ async function updateUserSettings(status, action, self, userId = null) {
         headers: {[csrfHeader]: csrfToken}
     });
     if (!response.ok) {
-        let js = response.json();
-        const msg = await js;
-        showInfoMessage(msg.message);
+        showInfoMessage('Ошибка применения настроек');
     }else{
         const data = await response.json();
         console.log(data);
@@ -319,13 +315,13 @@ async function join() {
         }
         try {
             const data = await response.json();
-            roomId = data.videocallsId.roomId;
+            const roomId = data.videocallsId.roomId;
             let username = data.videocalluserId.id.toString();
             let user_id = data.videocalluserId.id;
             let microstate = data.microstate ? data.microstate : false;
             let camerastate = data.camstate ? data.camstate : false;
             console.log(data);
-            opaqueId = `videoroom-${roomId}`;
+            const opaqueId = `videoroom-${roomId}`;
             if (!devices_start_state_updated) {
                 UiManager.setControlButtonIcon(data.soundstate, 'soundstate');
                 UiManager.setControlButtonIcon(data.demostate, 'demostate');
@@ -335,7 +331,7 @@ async function join() {
             Janus.init({
                 //  debug: "all",
                 callback: function () {
-                    startJanus(roomId, username, opaqueId, VideoCallUtils.parseDefaultState(microstate), VideoCallUtils.parseDefaultState(camerastate), user_id);
+                    janusManager.start(roomId, username, opaqueId, VideoCallUtils.parseDefaultState(microstate), VideoCallUtils.parseDefaultState(camerastate), user_id);
                 }
             });
         }catch (e) {
@@ -344,166 +340,7 @@ async function join() {
     }
 }
 
-function startJanus(roomId, username, opaqueId, microstate = defaultStates.OFF, camerastate = defaultStates.OFF, user_id) {
-    let videoroomHandle;
-    function generateTurnCredentials(secret) {
-        const unixTimeStamp = Math.floor(Date.now() / 1000) + 3600;
-        const username = `${unixTimeStamp}`;
-        const password = CryptoJS.HmacSHA1(username, secret).toString(CryptoJS.enc.Base64);
-        return {username, credential: password};
-    }
 
-    const {username: turnUsername, credential: turnCredential} = generateTurnCredentials(CONFIG.turn.secret);
-    janus = new Janus({
-        server:  CONFIG.janusServerWs,
-        iceServers: [
-            {urls: CONFIG.stun},
-            {
-                urls: CONFIG.turn.urls,
-                username: turnUsername,
-                credential: turnCredential
-            }
-        ],
-        success: function () {
-            janus.attach({
-                plugin: "janus.plugin.videoroom",
-                opaqueId: opaqueId,
-                success: function (pluginHandle) {
-                    videoroomHandle = pluginHandle;
-                    debugHandle = pluginHandle;
-                    const register = {
-                        request: "join",
-                        room: roomId,
-                        ptype: "publisher",
-                        display: username
-                    };
-                    videoroomHandle.send({message: register});
-                },
-                onmessage: async function (msg, jsep) {
-                    console.log("Received message:", msg);
-                    if (msg.videoroom === "joined") {
-                        connectToVideocallWs(roomId, user_id, videoroomHandle);
-                        feedManager.ownFeed = msg.id;
-                        const publishers = msg.publishers || [];
-
-                        if (publishers.length === 0) {
-                            await publishOwnFeed(videoroomHandle, user_id);
-                        } else {
-                            for (let i = 0; i < publishers.length; i++) {
-                                const publisher = publishers[i];
-                                const display = publisher.display;
-                                if (publisher.id !== feedManager.ownFeed) {
-                                    console.log("👤 Новый участник:", display + ' ' + publisher.id);
-                                    subscribe(publisher);
-                                }
-                            }
-                            await publishOwnFeed(videoroomHandle);
-                        }
-                    }
-
-                    if (msg.videoroom === "talking") {
-                        const talkingFeedId = msg.id;
-                        if (talkingFeedId === feedManager.ownFeed) {
-                            return;
-                        }
-                        if (feedManager.checkActiveMax('gte')) {
-                            let oldest = feedManager.getOldest();
-                            if (oldest) {
-                                await toggleVideo(talkingFeedId, false);
-                                feedManager.removeActive(talkingFeedId);
-                            }
-                        }
-                        feedManager.addActive(talkingFeedId);
-                        const userId = feedManager.get(feedManager.MapKey.FEED,talkingFeedId);
-                        const container=document.querySelector(`#user_${userId}`);
-                        if (VideoCallUtils.parseDefaultState(VideoCallUtils.getParticipantSettingState(container, 'cam')) === defaultStates.ON) {
-                            await toggleVideo(talkingFeedId, true);
-                        }
-                        feedManager.removeTimeout(talkingFeedId);
-                        UiManager.lightUser(userId, true);
-                    }
-
-                    if (msg.videoroom === "stopped-talking") {
-                        const feedId = msg.id;
-                        if (feedId === feedManager.ownFeed) {
-                            return;
-                        }
-
-                        if (subscriberHandle.has(feedId) && feedManager.isActive(feedId)) {
-                            const userId = feedManager.get(feedManager.MapKey.FEED,feedId);
-                            if (feedManager.checkActiveMax('gt')) {
-                                console.log('UNSUBBED');
-                                const timeout = setTimeout(() => {
-                                    console.log('TIMEOUT');
-                                    const container=document.querySelector(`#user_${userId}`);
-                                    if (VideoCallUtils.parseDefaultState(VideoCallUtils.getParticipantSettingState(container, 'cam')) === defaultStates.ON) {
-                                        toggleVideo(feedId, false);
-                                    }
-                                    feedManager.removeTimeout(feedId);
-                                }, 5000);
-
-                                feedManager.addTimeout(feedId,timeout);
-                            }
-                            UiManager.lightUser(userId, false);
-                        }
-                    }
-
-                    if (msg.videoroom === "event") {
-                        if (msg.leaving || msg.unpublished) {
-                            const leavingFeed = msg.leaving || msg.unpublished;
-                            if (leavingFeed === feedManager.ownFeed) {
-                                return;
-                            }
-                            unsubscribeFromPublisher(leavingFeed);
-                            const userId = feedManager.get(feedManager.MapKey.FEED,leavingFeed);
-                            feedManager.remove(leavingFeed,userId);
-                            const users = document.querySelectorAll('[class*="user-participant"]');
-                            users.forEach(user => {
-                                if (feedManager.checkActiveMax('gte')) {
-                                    return;
-                                }
-                                const state = VideoCallUtils.getParticipantSettingState(user, 'cam');
-                                console.log(state);
-                                if (state !== null) {
-                                    if (VideoCallUtils.parseDefaultState(state) === defaultStates.ON) {
-                                        const userId = Number(user.id.substring(user.id.indexOf('_') + 1));
-                                        const feedId = feedManager.get(feedManager.MapKey.USER,userId);
-                                        if (feedId) {
-                                            toggleVideo(feedId, true);
-                                            feedManager.addActive(feedId);
-                                        }
-                                    }
-                                }
-                            });
-                        }
-                        if (msg.publishers) {
-                            const publishers = msg.publishers;
-                            for (let i = 0; i < publishers.length; i++) {
-                                const publisher = publishers[i];
-                                console.log("📡 Новый опубликованный поток:", publisher.display, publisher.id);
-                                if (publisher.id === feedManager.ownFeed) {
-                                    return;
-                                }
-                                if (!subscriberHandle.has(publisher.id)) {
-                                    subscribe(publisher);
-                                }
-                            }
-                        }
-                        if (msg.configured === "ok" && !devices_start_state_updated) {
-                            devices_start_state_updated = true;
-                            await updateDeviceWithTracks(false, microstate);
-                            await updateDeviceWithTracks(true, camerastate);
-                        }
-                    }
-
-                    if (jsep) {
-                        videoroomHandle.handleRemoteJsep({jsep: jsep});
-                    }
-                }
-            });
-        }
-    });
-}
 
 function subscribe(publisher){
     feedManager.add(feedManager.MapKey.USER, Number(publisher.display), publisher.id);

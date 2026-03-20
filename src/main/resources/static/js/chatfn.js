@@ -588,6 +588,66 @@ function removeFileFromList(id,fileName){
     }
 }
 
+function convertImage(img, maxWidth = 200){
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+
+    const scale = maxWidth / img.width;
+    canvas.width = maxWidth;
+    canvas.height = Math.floor(img.height * scale);
+
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+    return imageToUnicode(imageData);
+}
+
+function imageToUnicode(imageData, threshold = 128) {
+    const { data, width, height } = imageData;
+
+    let result = "";
+
+    for (let y = 0; y < height; y += 4) {
+        for (let x = 0; x < width; x += 2) {
+
+            let code = 0;
+
+            const getBit = (dx, dy, bit) => {
+                const px = x + dx;
+                const py = y + dy;
+
+                if (px >= width || py >= height) return;
+
+                const i = (py * width + px) * 4;
+
+                const gray =
+                    data[i] * 0.299 +
+                    data[i + 1] * 0.587 +
+                    data[i + 2] * 0.114;
+
+                if (gray < threshold) {
+                    code |= bit;
+                }
+            };
+
+            getBit(0, 0, 1);   // dot 1
+            getBit(0, 1, 2);   // dot 2
+            getBit(0, 2, 4);   // dot 3
+            getBit(1, 0, 8);   // dot 4
+            getBit(1, 1, 16);  // dot 5
+            getBit(1, 2, 32);  // dot 6
+            getBit(0, 3, 64);  // dot 7
+            getBit(1, 3, 128); // dot 8
+
+            result += String.fromCharCode(0x2800 + code);
+        }
+        result += "\n";
+    }
+
+    return result;
+}
+
 document.addEventListener('DOMContentLoaded',function (){
     const msgInput=document.getElementById('message_input');
     if(msgInput) {
